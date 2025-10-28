@@ -1,0 +1,6 @@
+/ARQUIVO
+/build
+/cmdvenv
+/dist
+__pycache*
+*.spec
