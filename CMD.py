@@ -747,7 +747,7 @@ class CMD():
         gcount = 1
         gruposstr = ''
         for grupo in grupos:
-            gruposstr = gruposstr + f'[bright_magenta] [{gcount}] [bold green]{grupo}\n'
+            gruposstr = gruposstr + f'[bold green] [{gcount}] [bold yellow]{grupo}\n'
             gcount += 1
         
         print("")
@@ -762,7 +762,7 @@ class CMD():
         atvcount = 1
         atividadesstr = ''
         for atividade in self.atividades:
-            atividadesstr = atividadesstr + f'[bright_magenta] [{atvcount}] [bold green]{atividade}\n'
+            atividadesstr = atividadesstr + f'[bold green] [{atvcount}] [bold yellow]{atividade}\n'
             atvcount += 1
         
         print("")

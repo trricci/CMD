@@ -80,20 +80,20 @@ else:
 while True:
     
     modo = Prompt.ask('''[bright_cyan]\n Digite a opção desejada:[bright_cyan]\n
-[bright_magenta]1   [grey89]Configurações Iniciais
-[bright_magenta]2   [grey89]Importar e Preparar a Rede Secundária Extraída do GIS
-[bright_magenta]3   [grey89]Calcular a Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e o Fator de Proporcionalidade da Obra (k) via Simulação de Fluxo de Potência
+[bold green]1   [grey89]Configurações Iniciais
+[bold green]2   [grey89]Importar e Preparar a Rede Secundária Extraída do GIS
+[bold green]3   [grey89]Calcular a Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e o Fator de Proporcionalidade da Obra (k) via Simulação de Fluxo de Potência
 [bright_cyan]-------------------------------
 [dark_orange]H   [dark orange]Ajuda / Glossário de Termos [bold bright_red][Em Construção][dark_orange]
 [dark_orange]S   [dark orange]Sobre o Programa CMD [bold bright_red][Em Construção][dark_orange]
 [dark_orange]Q   [dark orange]Para Encerrar o Programa[dark_orange]\n\n''')
 
-    # [bright_magenta]4   [grey89]Calcular a Participação Financeira do Consumidor (PFC) e o Encargo de Responsabilidade da Distribuidora (ERD)
-    # [bright_magenta]5   [grey89]Emitir Memória de Cálculo
-    # [bright_magenta]    [gray58]Opções Futuras A - Exemplo: Extrair os dados da rede secundária do GIS
-    # [bright_magenta]    [gray58]Opções Futuras B - Exemplo: Converter os dados da rede secundária extraída para o formato OpenDSS
-    # [bright_magenta]    [gray58]Opções Futuras C - Exemplo: Propor obra de reforço para atendimento da solicitação automaticamente
-    # [bright_magenta]    [gray58]Opções Futuras D - Exemplo: Emitir documento XYZ
+    # [bold green]4   [grey89]Calcular a Participação Financeira do Consumidor (PFC) e o Encargo de Responsabilidade da Distribuidora (ERD)
+    # [bold green]5   [grey89]Emitir Memória de Cálculo
+    # [bold green]    [gray58]Opções Futuras A - Exemplo: Extrair os dados da rede secundária do GIS
+    # [bold green]    [gray58]Opções Futuras B - Exemplo: Converter os dados da rede secundária extraída para o formato OpenDSS
+    # [bold green]    [gray58]Opções Futuras C - Exemplo: Propor obra de reforço para atendimento da solicitação automaticamente
+    # [bold green]    [gray58]Opções Futuras D - Exemplo: Emitir documento XYZ
     
     if modo == '1':
         print("")
