@@ -289,6 +289,19 @@ class CMD():
         
         self.logger.info("Configurações iniciais finalizadas com sucesso!")
     
+    def identify_critical_path(self):
+    
+        self.logger.info("Identificando o caminho crítico...")
+        target = self.interest_bus[0].split('.')[0]
+        source = self.raiz
+        edges = [item for item in nx.all_simple_edge_paths(self.F, source, target, cutoff=None)][0]
+        self.critical_path = [self.F.edges[item] for item in edges]
+        lcp = len(self.critical_path)
+        if lcp == 1:
+            self.logger.info(f"Caminho crítico identificado com sucesso: {lcp} vão entre o ponto de entrega da carga de estudo e o transformador de distribuição.")
+        elif len(self.critical_path) > 1:
+            self.logger.info(f"Caminho crítico identificado com sucesso: {lcp} vãos entre o ponto de entrega da carga de estudo e o transformador de distribuição.")
+    
     def build_graph(self):
     
         self.logger.info("Montando o grafo da rede secundária...")
@@ -320,6 +333,7 @@ class CMD():
         
         self.logger.info("Grafo da rede secundária orientado com sucesso!")
         
+        self.identify_critical_path ()
     
     def get_dss_file(self):
     
@@ -466,8 +480,9 @@ class CMD():
         ########################
         
         amps = []
-        for line in self.dss.Line.Name:
-            amps.append((line, np.max(np.abs(self.dss.Line[line].Currents()))/self.dss.Line[line].NormAmps))
+        #for line in self.dss.Line.Name:
+        for line in self.critical_path:
+            amps.append((line['Name'], np.max(np.abs(self.dss.Line[line['Name']].Currents()))/self.dss.Line[line['Name']].NormAmps))
         
         amps = pd.DataFrame(amps, columns=['Linha', 'Carregamento (pu)']).set_index('Linha')
         
