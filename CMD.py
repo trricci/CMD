@@ -15,8 +15,10 @@ warnings.filterwarnings("ignore")
 
 import os
 import time
+import shutil
 import locale
 import logging
+import zipfile
 #import oracledb
 import cx_Oracle
 import numpy as np
@@ -24,6 +26,7 @@ import pandas as pd
 import datetime as dt
 import networkx as nx
 from altdss import altdss
+from win32com import client
 from rich.prompt import Prompt
 from docxtpl import DocxTemplate
 from rich.console import Console
@@ -706,39 +709,50 @@ class CMD():
     
     def prepare_form_filling(self):
     
-        temp_pf = list(set([self.dss.Load[item].PF for item in self.interest_loads]))
-        if len(temp_pf) == 1:
-            fp_str = locale.format_string('%.2f', temp_pf[0])
-        else:
-            self.logger.warning("ATENÇÃO! Verificar no arquivo .dss o fator de potência da carga de estudo.")
-            fp_str = '0,92'
+        # temp_pf = list(set([self.dss.Load[item].PF for item in self.interest_loads]))
+        # if len(temp_pf) == 1:
+        #     fp_str = locale.format_string('%.2f', temp_pf[0])
+        # else:
+        #     self.logger.warning("ATENÇÃO! Verificar no arquivo .dss o fator de potência da carga de estudo.")
+        #     fp_str = '0,92'
         
         #self.PFC = (self.CTO - self.CRC) - self.ERD
         
         variables = {
-            "DATA_EXT_FULL" : self.today, 
-            #"NOTA_SAP_Z1" : '',
-            "DISCO" : self.disco,
-            #"V_PRI" : '',
-            #"V_SEC" : '',
+            "DATA_EXT_FULL" : self.today,
             
-            #"DEM_ATUAL" : '',
-            "DEM_SOLICIT" : locale.format_string('%.2f', np.sum(self.kW0)),
-            #"DEM_AUMENTO" : '',
+            "NOTA_SERV" : self.nota,
+            "DISCO" : self.disco,
+            "TIP_ATV" : self.tipo_atividade,
+            "V_PRI" : int(1e3*float(self.dss.Transformer[0].kVs[0])),
+            "V_SEC" : int(1e3*float(self.dss.Transformer[0].kVs[1])),
+            
+            "DEM_ATUAL" : locale.format_string('%.2f', self.DE),
+            "DEM_SOLICIT" : locale.format_string('%.2f', self.DTS),
+            "DEM_AUMENTO" : locale.format_string('%.2f', self.DTS-self.DE),
+            
             "MDD" : locale.format_string('%.2f', self.MDD),
-            "FP" : fp_str,
+            "QTOBS" : locale.format_string('%.2f', 100*(1-self.volts.min().min())),
+            "ETOBS" : locale.format_string('%.2f', np.abs(100*(self.volts.max().max()-1))),
+            "CARVAOOBS" : locale.format_string('%.2f', 100*self.amps.max().max()),
+            "CARTROBS" : locale.format_string('%.2f', 100*self.s_array[-1]),
+            "FAT_LIM" : self.fator_limitante,
+            #"FP" : fp_str,
             "PROPORC" : locale.format_string('%.2f', (100 * self.K_prop)),
-            "CRGVIG" : locale.format_string('%.2f', self.DE),
-            "CRGDEC" : locale.format_string('%.2f', self.DTS),
-            "AUMCRG" : locale.format_string('%.2f', self.DTS-self.DE),
-            "FDT" : locale.format_string('%.2f', self.FD),
-            "DEMERD" : locale.format_string('%.2f', self.Demanda_ERD),
-            "GRUTAR" : self.grupo_tar,
-            "CTO" : locale.currency(self.CTO),
-            "CTOP" : locale.currency(self.CTOp),
-            "ERD" : locale.currency(self.ERD),
-            "CRC" : locale.currency(self.CRC),
-            "PFC" : locale.currency(self.PFC)
+            
+            "OBS" : 'N/A'
+            
+            # "CRGVIG" : locale.format_string('%.2f', self.DE),
+            # "CRGDEC" : locale.format_string('%.2f', self.DTS),
+            # "AUMCRG" : locale.format_string('%.2f', self.DTS-self.DE),
+            # "FDT" : locale.format_string('%.2f', self.FD),
+            # "DEMERD" : locale.format_string('%.2f', self.Demanda_ERD),
+            # "GRUTAR" : self.grupo_tar,
+            # "CTO" : locale.currency(self.CTO),
+            # "CTOP" : locale.currency(self.CTOp),
+            # "ERD" : locale.currency(self.ERD),
+            # "CRC" : locale.currency(self.CRC),
+            # "PFC" : locale.currency(self.PFC)
             }
         
         return variables
@@ -809,6 +823,8 @@ class CMD():
         self.logger.info("Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e Fator de Proporcionalidade da Obra (K) calculados com sucesso!")
         self.logger.info(f"...MDD = {locale.format_string('%.2f kW.', self.MDD)}")
         self.logger.info(f"...K = {locale.format_string('%.2f', 100*self.K_prop)}%")
+            self.create_memoria_calculo()
+            
     
     def run_pfc_erd(self):
     
@@ -907,9 +923,89 @@ class CMD():
         print("")
         self.logger.info("Participação Financeira do Consumidor (PFC) e demais custos calculados com sucesso!")
     
+    def zip_directory(self, folder_path, zip_path):
+    
+        with zipfile.ZipFile(zip_path, mode='w') as zipf:
+            len_dir_path = len(folder_path)
+            for root, _, files in os.walk(folder_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    zipf.write(file_path, file_path[len_dir_path:])
+    
     def create_memoria_calculo(self):
     
         self.logger.info("Emitindo a Memória de Cálculo...")
         variables = self.prepare_form_filling()
-        self.make_report(variables, r"{self.BASE_FOLDER}\TEMPLATE_MEMORIA_CALCULO.docx", rf"{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Memória de Cálculo {self.nota}.docx")
+        docx_outp_str = rf"{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Memória de Cálculo {self.nota}_1.docx"
+        self.make_report(variables, rf"{self.BASE_FOLDER}\TEMPLATE_MEMORIA_CALCULO.docx", docx_outp_str)
+        
+        self.logger.info('Iniciando a substituição das figuras...')
+        
+        src_file = rf"{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Memória de Cálculo {self.nota}_1.docx"
+        out_dir = rf"{self.BASE_FOLDER}\temporary\run"
+        des_file = rf"{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Memória de Cálculo {self.nota}.docx"
+        
+        with zipfile.ZipFile(src_file, 'r') as zip_ref:
+            zip_ref.extractall(out_dir)
+        
+        imgrep_path_1 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_1.png'
+        # imgrep_path_2 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_2.png'
+        imgrep_path_3 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_3.png'
+        imgrep_path_4 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_4.png'
+        
+        media_path = os.path.join(out_dir, "word", "media")
+        img_file_1 = os.path.join(media_path, "image5.png")
+        # img_file_2 = os.path.join(media_path, "image6.png")
+        img_file_3 = os.path.join(media_path, "image7.png")
+        img_file_4 = os.path.join(media_path, "image8.png")
+        
+        os.remove(img_file_1)
+        # os.remove(img_file_2)
+        os.remove(img_file_3)
+        os.remove(img_file_4)
+        
+        shutil.copy(imgrep_path_1, img_file_1)
+        # shutil.copy(imgrep_path_2, img_file_2)
+        shutil.copy(imgrep_path_3, img_file_3)
+        shutil.copy(imgrep_path_4, img_file_4)
+        
+        self.zip_directory(out_dir, des_file)
+        
+        os.remove(rf"{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Memória de Cálculo {self.nota}_1.docx")
+        
+        # os.remove(imgrep_path_1)
+        # os.remove(imgrep_path_2)
+        # os.remove(imgrep_path_3)
+        # os.remove(imgrep_path_4)
+        
+        shutil.rmtree(rf'{self.BASE_FOLDER}\temporary')
+        
+        self.logger.info('Figuras substituídas!')
+        
+        word_app = client.DispatchEx("Word.Application")
+        word_app.Visible = False
+        doc = word_app.Documents.Open(f"{des_file.replace('/', '\\')}")
+        
+        if self.disco == 'CPFL Paulista':
+            logos_apagar = ['cpfl_pira', 'cpfl_scj', 'cpfl_rge']
+        elif self.disco == 'CPFL Piratininga':
+            logos_apagar = ['cpfl_psta', 'cpfl_scj', 'cpfl_rge']
+        elif self.disco == 'CPFL Santa Cruz':
+            logos_apagar = ['cpfl_psta', 'cpfl_pira', 'cpfl_rge']
+        elif self.disco == 'CPFL RGE':
+            logos_apagar = ['cpfl_psta', 'cpfl_pira', 'cpfl_scj']
+        
+        # Frente
+        k_logo = 4
+        while k_logo > 1:
+            for shape in doc.Shapes:
+                if shape.AlternativeText in logos_apagar:
+                    shape.Delete()
+                    k_logo -= 1
+        
+        doc.Fields.Update()
+        doc.Save()
+        doc.Close()
+        word_app.Quit()
+        
         self.logger.info("Memória de Cálculo emitida com sucesso!")
