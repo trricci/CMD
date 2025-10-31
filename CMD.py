@@ -339,50 +339,97 @@ class CMD():
     
     def get_dss_file(self):
     
-         files = os.listdir(rf"{self.BASE_FOLDER}\dss")
-         modtime = [time.localtime(os.path.getmtime(rf"{self.BASE_FOLDER}\dss\{item}")) for item in files]
-         fs = pd.Series(modtime, index=files).sort_values(ascending=False)
-         fs = fs.apply(lambda x: time.strftime("%A, %d de %B de %Y %H:%M:%S", x))
-         files = fs.index.to_list()[0:10]
-         
-         fcount = 1
-         filesstr = ''
-         for file in files:
-             filesstr = filesstr + f'[bright_magenta] [{fcount}] [bold green]{file} [grey78]{fs.loc[file]}\n'
-             fcount += 1
-         
-         filesstr = filesstr + f'[bright_magenta] [0] [bold green]Quero digitar o nome do arquivo...\n'
-         
-         res = Prompt.ask(f' [bright_cyan]Selecione o arquivo exportado do GIS-D após o projeto da obra:\n\n{filesstr}[bright_cyan]\n')
-         
-         if res == "0":
-             loop = True
-             while loop:
-                 print("")
-                 choosen_file = Prompt.ask(f' [bright_cyan]Digite o nome do arquivo, incluindo a sua extensão no formato <nome_arquivo.ext>')
-                 if choosen_file not in files:
-                     choosen_file = Prompt.ask(f'\n [red]ATENÇÃO! O arquivo {choosen_file} não foi localizado na pasta dss!\n\n[bright_cyan] Por favor confira o nome e digite novamente o nome do arquivo, incluindo a sua extensão no formato <nome_arquivo.ext>')
-                     if choosen_file in files:
-                         print("")
-                         self.logger.info(f"Arquivo {choosen_file} encontrado!")
-                         loop = False                         
-                 else:
-                     print("")
-                     self.logger.info(f"Arquivo {choosen_file} encontrado!")
-                     loop = False
-         else:
-             choosen_file = files[int(res)-1]
-             print("")
-             
-         self.dssfile = rf"{self.BASE_FOLDER}\dss\{choosen_file}"
-         
-         self.logger.info(f"O caminho completo do arquivo dss selecionado é: {self.dssfile}")
-         
-         self.dss("Clear")
-         self.dss(f"Redirect {self.dssfile}")
-         self.get_interest_bus()
-         
-         self.logger.info("Importação e preparação da rede secundária extraída do GIS finalizada com sucesso!")
+        self.novo_trafo = False 
+        
+        files = os.listdir(rf"{self.BASE_FOLDER}\dss")
+        modtime = [time.localtime(os.path.getmtime(rf"{self.BASE_FOLDER}\dss\{item}")) for item in files]
+        fs = pd.Series(modtime, index=files).sort_values(ascending=False)
+        fs = fs.apply(lambda x: time.strftime("%A, %d de %B de %Y %H:%M:%S", x))
+        files = fs.index.to_list()[0:10]
+        
+        fcount = 1
+        filesstr = ''
+        for file in files:
+            filesstr = filesstr + f'[bold yellow] [{fcount}] [bold green]{file} [grey78]{fs.loc[file]}\n'
+            fcount += 1
+        
+        filesstr = filesstr + f'[bold yellow] [A] [bold green]Quero digitar o nome do arquivo...\n' + f'[bold yellow] [B] [bold green]Ligação nova em área rural com extensão de rede primária e atendimento em trafo exclusivo (sem rede secundária existente)...\n'
+        
+        res = Prompt.ask(f' [bright_cyan]Selecione o arquivo exportado do GIS-D após o projeto da obra:\n\n{filesstr}[bright_cyan]\n')
+        
+        if res in ["a", "A"]:
+            loop = True
+            while loop:
+                print("")
+                choosen_file = Prompt.ask(f' [bright_cyan]Digite o nome do arquivo, incluindo a sua extensão no formato <nome_arquivo.ext>')
+                if choosen_file not in files:
+                    choosen_file = Prompt.ask(f'\n [red]ATENÇÃO! O arquivo {choosen_file} não foi localizado na pasta dss!\n\n[bright_cyan] Por favor confira o nome e digite novamente o nome do arquivo, incluindo a sua extensão no formato <nome_arquivo.ext>')
+                    if choosen_file in files:
+                        print("")
+                        self.logger.info(f"Arquivo {choosen_file} encontrado!")
+                        loop = False                         
+                else:
+                    print("")
+                    self.logger.info(f"Arquivo {choosen_file} encontrado!")
+                    loop = False
+        
+        elif res in ["b", "B"]:
+            self.novo_trafo = True
+            loop = True
+            while loop:
+                print("")
+                
+                new_tr_string = f'''
+[bold yellow] [1] [bold green]15 kVA (Trifásico)
+[bold yellow] [2] [bold green]30 kVA (Trifásico)
+[bold yellow] [3] [bold green]45 kVA (Trifásico)
+[bold yellow] [4] [bold green]75 kVA (Trifásico)
+[bold yellow] [5] [bold green]112,5 kVA (Trifásico
+[bold yellow] [6] [bold green]150 kVA (Trifásico)
+[bold yellow] [7] [bold green]225 kVA (Trifásico)
+[bold yellow] [8] [bold green]300 kVA (Trifásico)
+[bold yellow] [9] [bold green]10 kVA (Monofásico)
+[bold yellow] [10] [bold green]15 kVA (Monofásico)
+[bold yellow] [11] [bold green]25 kVA (Monofásico)
+[bold yellow] [12] [bold green]50 kVA (Monofásico)\n'''
+                
+                res = Prompt.ask(f' [bright_cyan]Escolha a potência (kva) do transformador de distribuição que será instalado para atendimento exclusivo à nova ligação:\n{new_tr_string}[brigh_cyan]\n')
+                
+                if res not in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']:
+                
+                    pass    
+                    #print("")    
+                    #res = Prompt.ask(f' [bright_cyan]Escolha a potência (kva) do transformador de distribuição que será instalado para atendimento exclusivo à nova ligação:\n\n{new_tr_string}[brigh_cyan]\n')
+                
+                else:
+                    pots = [15, 30, 45, 75, 112.5, 150, 225, 300, 10, 15, 25, 50]
+                    self.novo_tr_kva = pots[int(res)-1]
+                    print("")
+                    self.logger.info(f"Será instalado um novo transformador de distribuição de {self.novo_tr_kva} kVA para atendimento exclusivo à nova ligação!")
+                    loop = False
+        
+        else:
+            choosen_file = files[int(res)-1]
+            print("")
+            
+        if self.novo_trafo:
+            pass
+            
+        else:
+            self.dssfile = rf"{self.BASE_FOLDER}\dss\{choosen_file}"
+            
+            self.logger.info(f"O caminho completo do arquivo dss selecionado é: {self.dssfile}")
+            
+            self.dss("Clear")
+            self.dss(f"Redirect {self.dssfile}")
+            ret = self.get_interest_bus()
+            
+            if ret == 'error':
+                return
+            
+            self.build_graph()
+            
+        self.logger.info("Importação e preparação da rede secundária extraída do GIS finalizada com sucesso!")
     
     def change_service_cable(self, bitola):
     
@@ -418,6 +465,7 @@ class CMD():
         
         if len(self.interest_loads) == 0:
             self.logger.error("ATENÇÃO! Verificar a inclusão da carga de estudo no OpenDSS.")
+            return 'error'
         #elif len(self.interest_loads) > 1:
             #self.logger.error("ATENÇÃO! Verificar múltiplas cargas de estudo no OpenDSS.")
         else:
@@ -426,6 +474,11 @@ class CMD():
             self.logger.info(temp)
         
         self.interest_bus = [self.dss.Load[item].Bus1 for item in self.interest_loads]
+        
+        if len(list(set([item.split('.')[0] for item in self.interest_bus]))) > 1:
+            self.logger.error("ERRO! O arquivo carregado contém mais de uma carga de estudo! Por favor verifique o estudo no GIS e tente novamente.")
+            return 'error'
+        
         self.kW0 = [self.dss.Load[item].kW for item in self.dss.Load.Name if 'ce' in item]
         self.DTS = np.sum(self.kW0)
         self.logger.info(f"Identificada a Demanda Total Solicitada (DTS) pelo consumidor: {locale.format_string('%.2f kW', self.DTS)}...")
@@ -466,6 +519,8 @@ class CMD():
             self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}): será mantido ramal da base GIS para o cálculo da MDD...')
         else:
             self.logger.info(f'Ramal de Ligação existente igual ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será mantido para o cálculo da MDD...')
+        
+        return 'ok'
     
     def get_violations(self):
     
