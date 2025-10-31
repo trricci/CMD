@@ -22,6 +22,7 @@ import cx_Oracle
 import numpy as np
 import pandas as pd
 import datetime as dt
+import networkx as nx
 from altdss import altdss
 from rich.prompt import Prompt
 from docxtpl import DocxTemplate
@@ -287,6 +288,38 @@ class CMD():
             self.logger.warning(f'Pasta da nota {self.nota} já existente!')
         
         self.logger.info("Configurações iniciais finalizadas com sucesso!")
+    
+    def build_graph(self):
+    
+        self.logger.info("Montando o grafo da rede secundária...")
+        
+        self.G = nx.Graph()
+        
+        for line in self.dss.Line:
+            
+            self.G.add_edges_from([(
+                line.Bus1.split('.')[0],
+                line.Bus2.split('.')[0],
+                {'Name'   : line.Name,
+                 'Length' : line.Length,
+                 'Units'  : line.Units_str})])
+        
+        self.logger.info("Grafo da rede secundária montado com sucesso!")
+        
+        self.logger.info("Orientando o grafo da rede secundária...")
+        
+        self.raiz = self.dss.Transformer[0].Buses[-1].split('.')[0]
+        
+        self.F = nx.bfs_tree(self.G, self.raiz)
+        
+        ### Copia atributos das arestas
+        for e in self.F.edges:
+            self.F.add_edges_from([(e[0], e[1], self.G.edges[e])])
+        for n in self.F.nodes:
+            self.F.add_nodes_from([(n, self.G.nodes[n])])
+        
+        self.logger.info("Grafo da rede secundária orientado com sucesso!")
+        
     
     def get_dss_file(self):
     
