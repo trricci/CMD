@@ -414,7 +414,7 @@ class CMD():
             self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será substituído para o cálculo da MDD...')
             self.change_service_cable(self.dict_padrao_ramal[self.Categoria_Ligacao])
         elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
-            self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) superior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) mas será mantido para o cálculo da MDD...')
+            self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}): será mantido ramal da base GIS para o cálculo da MDD...')
         else:
             self.logger.info(f'Ramal de Ligação existente igual ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será mantido para o cálculo da MDD...')
     
