@@ -768,63 +768,83 @@ class CMD():
     
     def run_mdd(self):
     
-        if self.dssfile is None:
-            self.logger.warning("ATENÇÃO! SELECIONE O ARQUIVO DSS ANTES DE REALIZAR O CÁLCULO DA MDD!")
-            return    
-        
-        self.logger.info(f"Iniciando o cálculo da MDD via simulação de fluxo de potência...")
-        
-        self.logger.info("Calculando a MDD...")
-        self.find_mdd()
-        self.logger.info("MDD calculada com sucesso!")
-        
-        try:
-            self.logger.info(f"A máxima demanda disponibilizada (MDD) no ponto de conexão (PC) da UC {self.uc} é de {locale.format_string('%.2f kW.', self.MDD)}")
-        except:
-            self.logger.info(f"A máxima demanda disponibilizada (MDD) no ponto de conexão (PC) é de {locale.format_string('%.2f kW.', self.MDD)}")
-        
-        self.logger.info(f"Foram realizadas {self.kiter} simulações de fluxo de potência até a obtenção da MDD.")
-        self.logger.info(f"Valores observados:")
-        self.logger.info(f"...Subtensão (Queda de Tensão Máxima): {locale.format_string('%.2f', 100*(1-self.volts.min().min()))}% (Limite Considerado: {locale.format_string('%.2f', 100-100*VMIN)}%);")
-        self.logger.info(f"...Sobretensão (Elevação de Tensão Máxima): {locale.format_string('%.2f', np.abs(100*(self.volts.max().max()-1)))}% (Limite Considerado: {locale.format_string('%.2f', 100*VMAX-100)}%);")
-        self.logger.info(f"...Pior Carregamento (Máximo Carregamento de Vão): {locale.format_string('%.2f', 100*self.amps.max().max())}% (Limite Considerado: {locale.format_string('%.2f', 100*IMAX)}%);")
-        self.logger.info(f"...Carregamento do Transformador: {locale.format_string('%.2f', 100*self.s_array[-1])}% (Limite Considerado: {locale.format_string('%.2f', 100*SMAX)}%);")
-        # self.logger.info(f"{self.l_array}")
-        self.logger.info(f"O fator limitante da MDD é: {self.fator_limitante}")
-        
-        self.logger.info(f"Iniciando o cálculo do Fator de Proporcionalidade da Obra (K)...")
-        self.K_prop = (self.DTS - self.DE) / (self.MDD - self.DE)
-        self.logger.info(f"O Fator de Proporcionalidade da Obra (K) é de {locale.format_string('%.2f', 100*self.K_prop)}%...")
-        
-        self.logger.info("Elaborando as figuras com os resultados das simulações (memória de cálculo)...")
-        self.plot_increase()
-        self.logger.info("Figuras elaboradas com sucesso!")
-        self.logger.info("Gravando as figuras...")
-        self.plot_save()
-        self.logger.info("Figuras salvas com sucesso!")
-        
-        # print("")
-        # res = Prompt.ask(f' [bright_cyan]Deseja visualizar as figuras elaboradas? [green][S] SIM [bright_cyan]ou [red][N] NÃO[bright_cyan]')
-        
-        # loop = True
-        
-        # while loop:
-        
-        #     if res in ['s', 'S']:
-        #         loop = False
-        #         plt.show()
-        #     elif res in ['n', 'N']:
-        #         loop = False
-        #         plt.close('all')
-        #     else:
-        #         res = Prompt.ask(f' [red]Opção Inválida! [bright_cyan]Deseja visualizar as figuras elaboradas? [green][S] SIM [bright_cyan]ou [red][N] NÃO[bright_cyan]')
-        
-        # print("")
-        self.logger.info("Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e Fator de Proporcionalidade da Obra (K) calculados com sucesso!")
-        self.logger.info(f"...MDD = {locale.format_string('%.2f kW.', self.MDD)}")
-        self.logger.info(f"...K = {locale.format_string('%.2f', 100*self.K_prop)}%")
+        if self.novo_trafo:
+            
+            self.logger.info(f"Iniciando o cálculo da MDD para ligação nova com transformador exclusivo...")
+            self.MDD = self.novo_tr_kva
+            self.logger.info(f"A máxima demanda disponibilizada (MDD) no ponto de conexão (PC) é de {locale.format_string('%.2f kW', self.MDD)} (i.e., a capacidade do novo transformador que será instalado).")
+            
+            self.logger.info(f'O fator limitante da MDD é: "Carregamento do Transformador"')
+            
+            self.logger.info(f"Iniciando o cálculo do Fator de Proporcionalidade da Obra (K)...")
+            self.K_prop = (self.DTS - self.DE) / (self.MDD - self.DE)
+            self.logger.info(f"O Fator de Proporcionalidade da Obra (K) é de {locale.format_string('%.2f', 100*self.K_prop)}%...")
+            
             self.create_memoria_calculo()
             
+            self.logger.info("Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e Fator de Proporcionalidade da Obra (K) calculados com sucesso!")
+            self.logger.info(f"...MDD = {locale.format_string('%.2f kW.', self.MDD)}")
+            self.logger.info(f"...K = {locale.format_string('%.2f', 100*self.K_prop)}%")
+            
+        else:
+            if self.dssfile is None:
+                self.logger.warning("ATENÇÃO! SELECIONE O ARQUIVO DSS ANTES DE REALIZAR O CÁLCULO DA MDD!")
+                return    
+            
+            self.logger.info(f"Iniciando o cálculo da MDD via simulação de fluxo de potência...")
+            
+            self.logger.info("Calculando a MDD...")
+            self.find_mdd()
+            self.logger.info("MDD calculada com sucesso!")
+            
+            try:
+                self.logger.info(f"A máxima demanda disponibilizada (MDD) no ponto de conexão (PC) da UC {self.uc} é de {locale.format_string('%.2f kW.', self.MDD)}")
+            except:
+                self.logger.info(f"A máxima demanda disponibilizada (MDD) no ponto de conexão (PC) é de {locale.format_string('%.2f kW.', self.MDD)}")
+            
+            self.logger.info(f"Foram realizadas {self.kiter} simulações de fluxo de potência até a obtenção da MDD.")
+            self.logger.info(f"Valores observados:")
+            self.logger.info(f"...Subtensão (Queda de Tensão Máxima): {locale.format_string('%.2f', 100*(1-self.volts.min().min()))}% (Limite Considerado: {locale.format_string('%.2f', 100-100*VMIN)}%);")
+            self.logger.info(f"...Sobretensão (Elevação de Tensão Máxima): {locale.format_string('%.2f', np.abs(100*(self.volts.max().max()-1)))}% (Limite Considerado: {locale.format_string('%.2f', 100*VMAX-100)}%);")
+            self.logger.info(f"...Pior Carregamento (Máximo Carregamento de Vão): {locale.format_string('%.2f', 100*self.amps.max().max())}% (Limite Considerado: {locale.format_string('%.2f', 100*IMAX)}%);")
+            self.logger.info(f"...Carregamento do Transformador: {locale.format_string('%.2f', 100*self.s_array[-1])}% (Limite Considerado: {locale.format_string('%.2f', 100*SMAX)}%);")
+            # self.logger.info(f"{self.l_array}")
+            self.logger.info(f"O fator limitante da MDD é: {self.fator_limitante}")
+            
+            self.logger.info(f"Iniciando o cálculo do Fator de Proporcionalidade da Obra (K)...")
+            self.K_prop = (self.DTS - self.DE) / (self.MDD - self.DE)
+            self.logger.info(f"O Fator de Proporcionalidade da Obra (K) é de {locale.format_string('%.2f', 100*self.K_prop)}%...")
+            
+            self.logger.info("Elaborando as figuras com os resultados das simulações (memória de cálculo)...")
+            self.plot_increase()
+            self.logger.info("Figuras elaboradas com sucesso!")
+            self.logger.info("Gravando as figuras...")
+            self.plot_save()
+            self.logger.info("Figuras salvas com sucesso!")
+            
+            # print("")
+            # res = Prompt.ask(f' [bright_cyan]Deseja visualizar as figuras elaboradas? [green][S] SIM [bright_cyan]ou [red][N] NÃO[bright_cyan]')
+            
+            # loop = True
+            
+            # while loop:
+            
+            #     if res in ['s', 'S']:
+            #         loop = False
+            #         plt.show()
+            #     elif res in ['n', 'N']:
+            #         loop = False
+            #         plt.close('all')
+            #     else:
+            #         res = Prompt.ask(f' [red]Opção Inválida! [bright_cyan]Deseja visualizar as figuras elaboradas? [green][S] SIM [bright_cyan]ou [red][N] NÃO[bright_cyan]')
+            
+            # print("")
+            
+            self.create_memoria_calculo()
+            
+            self.logger.info("Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e Fator de Proporcionalidade da Obra (K) calculados com sucesso!")
+            self.logger.info(f"...MDD = {locale.format_string('%.2f kW.', self.MDD)}")
+            self.logger.info(f"...K = {locale.format_string('%.2f', 100*self.K_prop)}%")
     
     def run_pfc_erd(self):
     
