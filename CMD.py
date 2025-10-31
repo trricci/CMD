@@ -97,9 +97,14 @@ class CMD():
         self.current_violation = False
         self.transformer_violation = False
         
+        self.V_ARRAY = []
+        self.I_ARRAY = []
+        self.S_ARRAY = []
+        
         self.v_array = []
         self.i_array = []
         self.s_array = []
+        
         self.l_array = []
         
         self.dssfile = None
@@ -537,17 +542,25 @@ class CMD():
         v_point = v.min().min()
         self.v_array.append(v_point)
         
+        self.V_ARRAY.append(v.unstack())
+        
         ########################
         
         amps = []
+        ampsph = []
         #for line in self.dss.Line.Name:
         for line in self.critical_path:
             amps.append((line['Name'], np.max(np.abs(self.dss.Line[line['Name']].Currents()))/self.dss.Line[line['Name']].NormAmps))
+            ampsph.append((line['Name'], np.abs(self.dss.Line[line['Name']].Currents()).reshape(2,-1)[0, :]/self.dss.Line[line['Name']].NormAmps))
         
         amps = pd.DataFrame(amps, columns=['Linha', 'Carregamento (pu)']).set_index('Linha')
+        ampsph = pd.DataFrame(ampsph, columns=['Linha', 'Carregamento (pu)']).set_index('Linha')
+        ampsph = pd.DataFrame(ampsph['Carregamento (pu)'].to_list(), index=ampsph.index, columns=['1', '2', '3'])
         
         i_point = amps['Carregamento (pu)'].max()
         self.i_array.append(i_point)
+        
+        self.I_ARRAY.append(ampsph.unstack())
         
         ########################
         
@@ -558,6 +571,8 @@ class CMD():
         # CORRENTE
         s_point = np.max(np.abs(self.dss.Transformer.Currents().reshape(2,-1)[-1]))/(self.dss.Transformer[0].kVAs[0]/(np.sqrt(3)*self.dss.Transformer[0].kVs[-1]))
         self.s_array.append(s_point)
+        
+        self.S_ARRAY.append(np.abs(self.dss.Transformer.Currents().reshape(2,-1)[-1])/(self.dss.Transformer[0].kVAs[0]/(np.sqrt(3)*self.dss.Transformer[0].kVs[-1])))
         
         ########################
         
@@ -646,6 +661,11 @@ class CMD():
     
     def plot_increase(self):
     
+        TEMPV = pd.concat(self.V_ARRAY, axis=1)
+        TEMPV.columns = self.l_array
+        TEMPV = 100 * (TEMPV - 1)
+        TEMPV[TEMPV > 0] = 0
+        
         tempV = pd.Series(self.v_array, index=self.l_array).sort_index()
         tempI = 100*pd.Series(self.i_array, index=self.l_array).sort_index()
         tempS = 100*pd.Series(self.s_array, index=self.l_array).sort_index()
@@ -656,42 +676,81 @@ class CMD():
         self.fig1 = plt.figure(figsize=(6.53, 3.50), constrained_layout=True)
         ax = self.fig1.gca()
         #tempV.plot(ax=ax, marker='.', ls='-', color='C0')
-        tempV.plot(ax=ax, ls='-', color='C0')
+        #tempV.plot(ax=ax, ls='-', color='C0')
+        TEMPV.T['1'].plot(ax=ax, ls='-', color='k', legend=False)
+        TEMPV.T['2'].plot(ax=ax, ls='-', color='b', legend=False)
+        TEMPV.T['3'].plot(ax=ax, ls='-', color='darkgray', legend=False)
         ylims = ax.get_ylim()
         xlims = ax.get_xlim()
-        ax.set_xlabel('Carregamento do Ponto de Conexão (kW)')
-        ax.set_ylabel('Tensão Mínima dos Pontos de Entrega (pu)')
-        ax.fill_between(xlims, VMIN, 9.99, color='honeydew')
-        ax.fill_between(xlims, 0, VMIN, color='mistyrose')
+        ax.set_xlabel('Demanda do Ponto de Conexão (kW)')
+        ax.set_ylabel('Queda de Tensão nos Pontos de Entrega (%)')
+        ax.fill_between(xlims, -100*(9.99-1), 100*(VMIN-1), color='mistyrose')
+        ax.fill_between(xlims, 100*(VMIN-1), 9e9, color='honeydew')
         #ax.axhline(y=VMIN, color='r', ls='--', lw=1)
-        ax.plot([self.MDD, self.MDD], [ylims[0], self.v_array[-1]], color='r', ls='--', lw=1, marker='x')
+        ax.plot([self.MDD, self.MDD], [ylims[0], 100*(self.v_array[-1]-1)], color='r', ls='--', lw=1, marker='x')
         #ax.plot([np.sum(self.kW0), np.sum(self.kW0)], [ylims[0], self.v_array[0]], color='r', ls='--', lw=1, marker='x')
         ax.set_ylim(ylims)
-        ax.set_title("Tensão")
+        ax.set_title("")
+        
+        TEMPV = pd.concat(self.V_ARRAY, axis=1)
+        TEMPV.columns = self.l_array
+        TEMPV = 100 * (TEMPV - 1)
+        TEMPV[TEMPV < 0] = 0
         
         self.fig2 = plt.figure(figsize=(6.53, 3.50), constrained_layout=True)
         ax = self.fig2.gca()
+        TEMPV.T['1'].plot(ax=ax, ls='-', color='k', legend=False)
+        TEMPV.T['2'].plot(ax=ax, ls='-', color='b', legend=False)
+        TEMPV.T['3'].plot(ax=ax, ls='-', color='darkgray', legend=False)
+        ylims = ax.get_ylim()
+        ax.set_xlabel('Demanda do Ponto de Conexão (kW)')
+        ax.set_ylabel('Elevação de Tensão nos Pontos de Entrega (%)')
+        ax.fill_between(xlims, -100*(9.99-1), 100*(VMIN-1), color='mistyrose')
+        ax.fill_between(xlims, 100*(VMIN-1), 9e9, color='honeydew')
+        #ax.axhline(y=VMIN, color='r', ls='--', lw=1)
+        kkk = 100*(self.v_array[-1]-1)
+        if kkk < 0:
+            kkk = 0
+        ax.plot([self.MDD, self.MDD], [ylims[0], kkk], color='r', ls='--', lw=1, marker='x')
+        #ax.plot([np.sum(self.kW0), np.sum(self.kW0)], [ylims[0], self.v_array[0]], color='r', ls='--', lw=1, marker='x')
+        ax.set_ylim(ylims)
+        ax.set_title("")
+        
+        TEMPI = pd.concat(self.I_ARRAY, axis=1)
+        TEMPI.columns = self.l_array
+        TEMPI = 100 * (TEMPI)
+        
+        self.fig3 = plt.figure(figsize=(6.53, 3.50), constrained_layout=True)
+        ax = self.fig3.gca()
         #tempI.plot(ax=ax, marker='.', ls='-', color='C0')
-        tempI.plot(ax=ax, ls='-', color='C0')
+        #tempI.plot(ax=ax, ls='-', color='C0')
+        TEMPI.T['1'].plot(ax=ax, ls='-', color='k', legend=False)
+        TEMPI.T['2'].plot(ax=ax, ls='-', color='b', legend=False)
+        TEMPI.T['3'].plot(ax=ax, ls='-', color='darkgray', legend=False)
         ylims = ax.get_ylim()
         xlims = ax.get_xlim()
-        ax.set_xlabel('Carregamento do Ponto de Conexão (kW)')
-        ax.set_ylabel('Carregamento Máximo dos Vãos (%)')
+        ax.set_xlabel('Demanda do Ponto de Conexão (kW)')
+        ax.set_ylabel('Carregamento dos Segmentos (%)')
         ax.fill_between(xlims, 100*IMAX, 999.00, color='mistyrose')
         ax.fill_between(xlims, 0, 100*IMAX, color='honeydew')
         #ax.axhline(y=100*IMIN, color='r', ls='--', lw=1)
         ax.plot([self.MDD, self.MDD], [ylims[0], 100*self.i_array[-1]], color='r', ls='--', lw=1, marker='x')
         #ax.plot([np.sum(self.kW0), np.sum(self.kW0)], [ylims[0], 100*self.i_array[0]], color='r', ls='--', lw=1, marker='x')
         ax.set_ylim(ylims)
-        ax.set_title("Corrente nos Condutores")
+        ax.set_title("")
         
-        self.fig3 = plt.figure(figsize=(6.53, 3.50), constrained_layout=True)
-        ax = self.fig3.gca()
+        TEMPS = 100*pd.DataFrame(self.S_ARRAY, columns=['1', '2', '3', '4'], index=self.l_array).sort_index()
+        
+        self.fig4 = plt.figure(figsize=(6.53, 3.50), constrained_layout=True)
+        ax = self.fig4.gca()
         #tempS.plot(ax=ax, marker='.', ls='-', color='C0')
-        tempS.plot(ax=ax, ls='-', color='C0')
+        #tempS.plot(ax=ax, ls='-', color='C0')
+        TEMPS['1'].plot(ax=ax, ls='-', color='k', legend=False)
+        TEMPS['2'].plot(ax=ax, ls='-', color='b', legend=False)
+        TEMPS['3'].plot(ax=ax, ls='-', color='darkgray', legend=False)
         ylims = ax.get_ylim()
         xlims = ax.get_xlim()
-        ax.set_xlabel('Carregamento do Ponto de Conexão (kW)')
+        ax.set_xlabel('Demanda do Ponto de Conexão (kW)')
         ax.set_ylabel('Carregamento do Transformador (%)')
         ax.fill_between(xlims, 100*SMAX, 999.00, color='mistyrose')
         ax.fill_between(xlims, 0, 100*SMAX, color='honeydew')
@@ -699,13 +758,14 @@ class CMD():
         ax.plot([self.MDD, self.MDD], [ylims[0], 100*self.s_array[-1]], color='r', ls='--', lw=1, marker='x')
         #ax.plot([np.sum(self.kW0), np.sum(self.kW0)], [ylims[0], 100*self.s_array[0]], color='r', ls='--', lw=1, marker='x')
         ax.set_ylim(ylims)   
-        ax.set_title("Carregamento do Transformador de Distribuição")
+        ax.set_title("")
     
     def plot_save(self):
     
         self.fig1.savefig(rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_1.png', format='png', dpi=300)
-        self.fig2.savefig(rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_2.png', format='png', dpi=300)
+        
         self.fig3.savefig(rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_3.png', format='png', dpi=300)
+        self.fig4.savefig(rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_4.png', format='png', dpi=300)
     
     def prepare_form_filling(self):
     
