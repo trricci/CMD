@@ -200,7 +200,9 @@ class CMD():
         else:
             self.empresa = None
         
-        if self.dados_nota[1] is None:
+        self.tipo_atividade = self.dados_nota[1]
+        
+        if self.tipo_atividade is None:
             self.logger.warning(f"ATENÇÃO: Nota de Serviço {self.nota} NÃO foi localizado no banco de dados CLTP. Verifique o número informado e tente novamente.")
             return
         
@@ -268,11 +270,11 @@ class CMD():
                     loop = True
         
         if self.dados_nota[0] == ' ':
-            self.logger.info(f"Tipo de Atividade: {self.dados_nota[1]}")
+            self.logger.info(f"Tipo de Atividade: {self.tipo_atividade}")
             self.logger.info(f"ATENÇÃO! UC não encontrada. Trata-se de LIGAÇÃO NOVA. Demanda Existente (DE) = 0 kW")
             self.DE = 0
         else:
-            self.logger.info(f"Unidade Consumidora: {self.dados_nota[0]}, Tipo de Atividade: {self.dados_nota[1]}")
+            self.logger.info(f"Unidade Consumidora: {self.dados_nota[0]}, Tipo de Atividade: {self.tipo_atividade}")
             self.uc = self.dados_nota[0]
             print("")
             self.Demanda_Vigente_input = Prompt.ask(' [bright_cyan]Informe a Demanda Existente (DE), em kW')
