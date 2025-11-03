@@ -648,6 +648,17 @@ class CMD():
     
         self.get_violations()
         
+        if self.violation:
+            temp = []
+            if self.voltage_violation:
+                temp.append("Tensão")
+            if self.current_violation:
+                temp.append("Carregamento de Vão")
+            if self.transformer_violation:
+                temp.append("Carregamento do Transformador")
+            self.logger.error(f"ERRO! O carregamento inicial da rede secundária já apresenta as violações a seguir: {temp}")
+            return 'error'
+        
         while not self.violation:
             
             self.increase_load()
@@ -658,6 +669,8 @@ class CMD():
         LIM_SUP = self.l_array[-1]
         
         self.MDD = self.binary_search(LIM_INF, LIM_SUP)
+        
+        return 'ok'
     
     def plot_increase(self):
     
@@ -854,7 +867,10 @@ class CMD():
             self.logger.info(f"Iniciando o cálculo da MDD via simulação de fluxo de potência...")
             
             self.logger.info("Calculando a MDD...")
-            self.find_mdd()
+            ret = self.find_mdd()
+            if ret == 'error':
+                return
+                
             self.logger.info("MDD calculada com sucesso!")
             
             try:
