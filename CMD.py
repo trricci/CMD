@@ -435,8 +435,6 @@ class CMD():
             if ret == 'error':
                 return
             
-            self.build_graph()
-            
         self.logger.info("Importação e preparação da rede secundária extraída do GIS finalizada com sucesso!")
     
     def change_service_cable(self, bitola):
@@ -492,10 +490,15 @@ class CMD():
         self.logger.info(f"Identificada a Demanda Total Solicitada (DTS) pelo consumidor: {locale.format_string('%.2f kW', self.DTS)}...")
         self.l_array.append(np.sum(self.kW0))
         
+        self.build_graph()
+        
         self.logger.info("Identificando o Ramal de Ligação/Conexão da Carga de Estudo...")
-        temp = [item for item in self.dss.Line.Name if self.dss.Line[item].Bus2.split('.')[0] == self.interest_bus[0].split('.')[0]]
-        if len(temp) == 1:
-            self.ramal_ligacao = temp[0]
+        
+        # temp = [item for item in self.dss.Line.Name if (self.dss.Line[item].Bus2.split('.')[0] == self.interest_bus[0].split('.')[0])]
+        # if len(temp) == 1:
+        #     self.ramal_ligacao = temp[0]
+        self.ramal_ligacao = self.critical_path[-1]['Name']
+        
         self.logger.info(f"Ramal de Ligação/Conexão da Carga de Estudo identificado com sucesso! Arranjo: {self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}")
         
         categorias = list(self.dict_padrao_ramal.keys())
