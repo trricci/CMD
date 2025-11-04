@@ -54,21 +54,24 @@ class CMD():
         locale.setlocale(locale.LC_ALL, 'pt_BR')
         
         ### De acordo com a GED 4319: Ramal de Ligação - Montagem (https://sites.cpfl.com.br/documentos-tecnicos/GED-4319.pdf)
-        self.dict_padrao_ramal = {
+        self.dict_padrao_ramal_127_220 = {
             'A1' : '1P10(A10)',
             'A2' : '1P16(A16)',
-            'A3' : '1P10(A10)',
-            'A4' : '1P16(A16)',
             'B1' : '2P16(A16)',
             'B2' : '2P25(A25)',
-            'B3a (15 < C ≤ 20 kW)' : '2P10(A10)',
-            'B3b (20 < C ≤ 25 kW)' : '2P16(A16)',
             'C1' : '3P10(A10)',
             'C2' : '3P16(A16)',
             'C3' : '3P25(A25)',
             'C4' : '3P35(A35)',
             'C5' : '3P50(A50)',
-            'C6' : '3P70(A70)',
+            'C6' : '3P70(A70)'
+        }
+        
+        self.dict_padrao_ramal_220_380 = {
+            'A3' : '1P10(A10)',
+            'A4' : '1P16(A16)',
+            'B3a (15 < C ≤ 20 kW)' : '2P10(A10)',
+            'B3b (20 < C ≤ 25 kW)' : '2P16(A16)',
             'C7' : '3P10(A10)',
             'C8' : '3P16(A16)',
             'C9' : '3P25(A25)',
@@ -468,6 +471,12 @@ class CMD():
         self.kiter -= 1
         self.simulate()
         
+        self.tensao_secundaria = self.dss.Transformer[0].kVs[-1]
+        
+        self.delta_wye = False
+        if (self.dss.Transformer[0].Conns[0].name == 'delta') & (self.dss.Transformer[0].Conns[1].name == 'wye'):
+            self.delta_wye = True
+        
         temp = dict(zip(['Fase A', 'Fase B', 'Fase C', 'Neutro'], (100*np.abs(self.dss.Transformer.Currents().reshape(2,-1)[-1])/(self.dss.Transformer[0].kVAs[0]/(np.sqrt(3)*self.dss.Transformer[0].kVs[-1]))).tolist()))
         
         self.carga_fase_A = temp['Fase A']
@@ -519,19 +528,49 @@ class CMD():
         
         self.logger.info(f"Ramal de Ligação/Conexão da Carga de Estudo identificado com sucesso! Arranjo: {self.ramal_existente}")
         
-        ccount = 1
-        categoriasstr = ''
-        for categoria in categorias:
-            categoriasstr = categoriasstr + f'[bright_magenta] [{ccount}] [bold green]{categoria}\n'
-            ccount += 1
+        #######################################################################
         
-        print("")
-        res = Prompt.ask(f' [bright_cyan]Selecione a "Categoria de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{categoriasstr}\n[bright_cyan]')
+        if self.tipo_atividade in [
+                'Reforma e Adequação - Aum. de Carga Edif',
+                'Ligação Nova Edificio - Coletivo',
+                'Ligação Nova BT -  Medição Agrupada',
+                'Ligação Nova BT - Entrada Subterranea'
+                ]:
+            
+            print("")
+            res = Prompt.ask(f' [bright_cyan]Selecione o "Ramal de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{categoriasstr}\n[bright_cyan]')            
+            
+        else:
+            
+            if self.delta_wye and self.tensao_secundaria == 0.220:
+                categorias = list(self.dict_padrao_ramal_127_220.keys())
+                self.dict_padrao_ramal = self.dict_padrao_ramal_127_220
+            elif self.delta_wye and self.tensao_secundaria == 0.380:
+                categorias = list(self.dict_padrao_ramal_220_380.keys())
+                self.dict_padrao_ramal = self.dict_padrao_ramal_220_380
+            else:
+                self.logger.error(f"ERRO! Ferramenta não prevê transformadores com conexão diferente de Delta/Estrela ou Tensões Secundárias de {1e3*self.tensao_secundaria} (i.e., diferentes de 220 ou de 380 V). Favor contactar responsável.")
+                return 'error'
+            
+            ccount = 1
+            categoriasstr = ''
+            for categoria in categorias:
+                categoriasstr = categoriasstr + f'[bold green] [{ccount}] [bold yellow]{categoria}\n'
+                ccount += 1
+            
+            print("")
+            res = Prompt.ask(f' [bright_cyan]Selecione a "Categoria de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{categoriasstr}\n[bright_cyan]')
+            
+            print("")
+            choosen_categoria = categorias[int(res)-1]
+            self.Categoria_Ligacao = choosen_categoria
+            self.logger.info(f"Foi selecionada a Categoria de Ligação {choosen_categoria}, que deve ser atendida com Ramal de Ligação {self.dict_padrao_ramal[self.Categoria_Ligacao]} conforme a GED 4319...")
         
-        print("")
-        choosen_categoria = categorias[int(res)-1]
-        self.Categoria_Ligacao = choosen_categoria
-        self.logger.info(f"Foi selecionada a Categoria de Ligação {choosen_categoria}, que deve ser atendida com Ramal de Ligação {self.dict_padrao_ramal[self.Categoria_Ligacao]} conforme a GED 4319...")
+        
+        
+        
+        
+        #######################################################################
         
         fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
         fases_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao][0])
