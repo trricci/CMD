@@ -32,7 +32,7 @@ from docxtpl import DocxTemplate
 from rich.console import Console
 from rich.logging import RichHandler
 from matplotlib import pyplot as plt
-from dss import SolveModes, ControlModes
+from dss import SolveModes, ControlModes, DSSSaveFlags
 
 VERSION = '0.1.3'
 
@@ -442,6 +442,9 @@ class CMD():
             if ret == 'error':
                 return
             
+            self.flags_save = DSSSaveFlags.CalcVoltageBases | DSSSaveFlags.ExcludeDefault | DSSSaveFlags.SingleFile | DSSSaveFlags.KeepOrder | DSSSaveFlags.SetVoltageBases | DSSSaveFlags.IsOpen | DSSSaveFlags.ToString
+            self.circuit_string = self.dss.to_dss_python().Circuits.Save('', self.flags_save)
+        
         self.logger.info("Importação e preparação da rede secundária extraída do GIS finalizada com sucesso!")
     
     def change_service_cable(self, bitola):
