@@ -35,6 +35,7 @@ from matplotlib import pyplot as plt
 from dss import SolveModes, ControlModes, DSSSaveFlags
 
 VERSION = '0.1.3'
+VERSION_DATA = '4 de novembro de 2025'
 
 DB_REMOTO = False
 

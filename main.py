@@ -5,7 +5,7 @@ import sys
 import time
 import warnings
 from rich import print
-from CMD import CMD
+from CMD import CMD, VERSION, VERSION_DATA
 from rich.text import Text
 from rich.style import Style
 from rich.prompt import Prompt
@@ -34,7 +34,7 @@ if console_version == '1':
     os.system('mode 167, 57')
    
     print("[bold yellow]----------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-    print("[bold yellow] [bold green]CMD[bold yellow] - Programa de Cálculo da Máxima Demanda Disponibilizada em Baixa Tensão ([bright_cyan]VERSÃO 0.1.2 - BETA[bold yellow])")
+    print(f"[bold yellow] [bold green]CMD[bold yellow] - Programa de Cálculo da Máxima Demanda Disponibilizada em Baixa Tensão ([bright_cyan]VERSÃO {VERSION} - BETA[bold yellow])")
     print("[bold yellow] Desenvolvido pela ERA Energy Research and Analytics e pela CPFL Energia no âmbito do Projeto de PDI ANEEL")
     print("[bold yellow] PA3091 FERRAMENTA DE GESTÃO AUTOMÁTICA DA CAPACIDADE DE ACOMODAÇÃO (HOSTING CAPACITY) DE GERAÇÃO DISTRIBUÍDA")
     print("[bold yellow] Para mais informações sobre sua utilização, melhorias e correções contactar Heliton de Oliveira Vilibor (RESN)")
@@ -93,7 +93,7 @@ while True:
 [bold green]3   [grey89]Calcular a Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e o Índice de Proporcionalização da Obra (k) via Simulação de Fluxo de Potência
 [bright_cyan]-------------------------------
 [dark_orange]H   [dark orange]Ajuda / Glossário de Termos [bold bright_red][Em Construção][dark_orange]
-[dark_orange]S   [dark orange]Sobre o Programa CMD [bold bright_red][Em Construção][dark_orange]
+[dark_orange]S   [dark orange]Sobre o Programa CMD[dark_orange]
 [dark_orange]Q   [dark orange]Para Encerrar o Programa[dark_orange]\n\n''')
 
     # [bold green]4   [grey89]Calcular a Participação Financeira do Consumidor (PFC) e o Encargo de Responsabilidade da Distribuidora (ERD)
@@ -179,7 +179,7 @@ while True:
         console.rule("[dark_orange]Sobre o programa CMD", style=linha_laranja)
         print("")
         print(Text("### CMD - PROGRAMA DE CÁLCULO DA MÁXIMA DEMANDA DISPONIBILIZADA EM BAIXA TENSÃO ###", justify='center', style=style_bold_red))
-        print("[bold white]VERSÃO [bright_cyan]0.1.2 (BETA)[bold white] de [bright_cyan]16 de outubro de 2025")
+        print(f"[bold white]VERSÃO [bright_cyan]{VERSION} (BETA)[bold white] de [bright_cyan]{VERSION_DATA}")
         print("")
         print("[bold white]Este programa foi desenvolvido pela ERA Energy Research and Analytics e pela CPFL Energia no âmbito do Programa de Pesquisa, Desenvolvimento & Inovação da Agência Nacional de Energia Elétrica (ANEEL) Projeto PA3091 - Ferramenta de Gestão Automática da Capacidade de Acomodação (Hosting Capacity) de Geração Distribuída, iniciado em 2 de outubro de 2023 com finalização prevista para 1° de setembro de 2027.")
         print("")
@@ -190,9 +190,10 @@ while True:
         print("[bold green]ERA: [bold white]Ricardo Torquato Borges, José Carlos Garcia Andrade, Pedro Augusto Viana Pato, Rodrigo Santos Bonadia, Tiago de Moraes Barbosa, Tiago Rodarte Ricciardi, Vinicius Carnelossi da Cunha")
         print("")
         third_part_list = [
-            '[bold yellow] AltDSS-Python [white](https://dss-extensions.org/AltDSS-Python/)',
+            '[bold yellow]AltDSS-Python [white](https://dss-extensions.org/AltDSS-Python/)',
             '[bold yellow]cx_Oracle [white](https://oracle.github.io/python-cx_Oracle/)',
             '[bold yellow]matplotlib [white](https://matplotlib.org/)',
+            '[bold yellow]NetworkX [white](https://networkx.org/documentation)',
             '[bold yellow]NumPy [white](https://numpy.org/)',
             #'[bold yellow]oracledb [white](https://https://oracle.github.io/python-oracledb/)',
             '[bold yellow]pandas [white](https://pandas.pydata.org/)',
@@ -200,7 +201,7 @@ while True:
             '[bold yellow]pywin32 [white](https://github.com/mhammond/pywin32)',
             '[bold yellow]rich [white](https://rich.readthedocs.io)'
             ]
-        print(f"[bold white]O programa CMD foi escrito em linguagem Python e utilizou as seguintes bibliotecas de terceiros: {', '.join(third_part_list)}.")
+        print(f"[bold white]O programa CMD é escrito em linguagem Python e utiliza as seguintes bibliotecas de terceiros: {', '.join(third_part_list)}.")
         print("")
         console.rule("", style=linha_laranja)
     elif modo in ['q', 'Q']:
