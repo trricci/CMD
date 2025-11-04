@@ -1,0 +1,8 @@
+*.pyc
+*.png
+*.svg
+*.spec
+/ARQUIVO
+/build
+/dist
+/cmdvenv
