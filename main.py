@@ -13,10 +13,18 @@ from rich.console import Console
 from rich.markdown import Markdown
 from matplotlib import pyplot as plt
 
+from database import consultaDB, PATH_DB
+
 plt.close('all')
 warnings.filterwarnings("ignore")
 
 cmd = CMD()
+
+db = consultaDB()
+if not os.path.exists(PATH_DB):
+    db.connect_db()
+    db.create_database()
+    db.close_db()
 
 console_version = '1'
 
@@ -110,7 +118,18 @@ while True:
     elif modo == '3':
         print("")
         try:
+            start_time = time.time()
             cmd.run_mdd()
+            try:
+                cmd.logger.info("Registrando estudo no banco de dados...")
+                db.connect_db()
+                db.insert_record_estudo(cmd, start_time)
+                db.close_db()
+                cmd.logger.info("Estudo registrado no banco de dados com sucesso!")
+                cmd.logger.info("Fim do estudo!")
+            except:
+                db.close_db()
+                print("[bold bright_red]NÃO FOI POSSÍVEL REGISTRAR O ESTUDO NO BANCO DE DADOS. FAVOR CONTACTAR RESPONSÁVEL.")
         except:
             print("[bold bright_red]NÃO FOI POSSÍVEL EXECUTAR A TAREFA. FAVOR CONTACTAR RESPONSÁVEL.")
     # elif modo == '4':
