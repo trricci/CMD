@@ -34,6 +34,10 @@ from rich.logging import RichHandler
 from matplotlib import pyplot as plt
 from dss import SolveModes, ControlModes
 
+VERSION = '0.1.3'
+
+DB_REMOTO = False
+
 class CMD():
     
     def __init__(self):
@@ -278,10 +282,13 @@ class CMD():
                     loop = True
         
         if self.dados_nota[0] == ' ':
+            self.ligacao_nova = True
             self.logger.info(f"Tipo de Atividade: {self.tipo_atividade}")
             self.logger.info(f"ATENÇÃO! UC não encontrada. Trata-se de LIGAÇÃO NOVA. Demanda Existente (DE) = 0 kW")
             self.DE = 0
+            self.uc = None
         else:
+            self.ligacao_nova = False
             self.logger.info(f"Unidade Consumidora: {self.dados_nota[0]}, Tipo de Atividade: {self.tipo_atividade}")
             self.uc = self.dados_nota[0]
             print("")
@@ -459,11 +466,17 @@ class CMD():
         self.simulate()
         
         temp = dict(zip(['Fase A', 'Fase B', 'Fase C', 'Neutro'], (100*np.abs(self.dss.Transformer.Currents().reshape(2,-1)[-1])/(self.dss.Transformer[0].kVAs[0]/(np.sqrt(3)*self.dss.Transformer[0].kVs[-1]))).tolist()))
-        self.logger.info(f"Carregamento do Transformador...")
-        self.logger.info(f"...Fase A: {locale.format_string('%.2f', temp['Fase A'])}%")
-        self.logger.info(f"...Fase B: {locale.format_string('%.2f', temp['Fase B'])}%")
-        self.logger.info(f"...Fase C: {locale.format_string('%.2f', temp['Fase C'])}%")
-        self.logger.info(f"Corrente de Neutro: {locale.format_string('%.2f', temp['Neutro'])}% da corrente nominal do transformador")
+        
+        self.carga_fase_A = temp['Fase A']
+        self.carga_fase_B = temp['Fase B']
+        self.carga_fase_C = temp['Fase C']
+        self.corrente_neutro = temp['Neutro']
+        
+        self.logger.info("Carregamento do Transformador...")
+        self.logger.info(f"...Fase A: {locale.format_string('%.2f', self.carga_fase_A)}%")
+        self.logger.info(f"...Fase B: {locale.format_string('%.2f', self.carga_fase_B)}%")
+        self.logger.info(f"...Fase C: {locale.format_string('%.2f', self.carga_fase_C)}%")
+        self.logger.info(f"Corrente de Neutro: {locale.format_string('%.2f', self.corrente_neutro)}% da corrente nominal do transformador")
         
         self.logger.info("Identificando a Carga de Estudo (CE)...")
         
@@ -499,9 +512,9 @@ class CMD():
         #     self.ramal_ligacao = temp[0]
         self.ramal_ligacao = self.critical_path[-1]['Name']
         
-        self.logger.info(f"Ramal de Ligação/Conexão da Carga de Estudo identificado com sucesso! Arranjo: {self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}")
+        self.ramal_existente = self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()
         
-        categorias = list(self.dict_padrao_ramal.keys())
+        self.logger.info(f"Ramal de Ligação/Conexão da Carga de Estudo identificado com sucesso! Arranjo: {self.ramal_existente}")
         
         ccount = 1
         categoriasstr = ''
@@ -523,9 +536,11 @@ class CMD():
         bitola_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper().split('P')[-1].split('(')[0])
         bitola_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao].split('P')[-1].split('(')[0])
         
+        self.ramal_modificado = False
         if (fases_existente < fases_norma) or (bitola_existente < bitola_norma):
             self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será substituído para o cálculo da MDD...')
             self.change_service_cable(self.dict_padrao_ramal[self.Categoria_Ligacao])
+            self.ramal_modificado = True
         elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
             self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}): será mantido ramal da base GIS para o cálculo da MDD...')
         else:
@@ -806,6 +821,7 @@ class CMD():
             "DEM_ATUAL" : locale.format_string('%.2f', self.DE),
             "DEM_SOLICIT" : locale.format_string('%.2f', self.DTS),
             "DEM_AUMENTO" : locale.format_string('%.2f', self.DTS-self.DE),
+            "CAT_LIGACAO" : self.Categoria_Ligacao,
             
             "MDD" : locale.format_string('%.2f', self.MDD),
             "QTOBS" : locale.format_string('%.2f', 100*(1-self.volts.min().min())),
@@ -881,12 +897,17 @@ class CMD():
             except:
                 self.logger.info(f"A máxima demanda disponibilizada (MDD) no ponto de conexão (PC) é de {locale.format_string('%.2f kW.', self.MDD)}")
             
+            self.queda_tensao = 100*(1-self.volts.min().min())
+            self.elevacao_tensao = np.abs(100*(self.volts.max().max()-1))
+            self.carregamento_max_vao = 100*self.amps.max().max()
+            self.carregamento_max_trafo = 100*self.s_array[-1]
+            
             self.logger.info(f"Foram realizadas {self.kiter} simulações de fluxo de potência até a obtenção da MDD.")
             self.logger.info(f"Valores observados:")
-            self.logger.info(f"...Subtensão (Queda de Tensão Máxima): {locale.format_string('%.2f', 100*(1-self.volts.min().min()))}% (Limite Considerado: {locale.format_string('%.2f', 100-100*VMIN)}%);")
-            self.logger.info(f"...Sobretensão (Elevação de Tensão Máxima): {locale.format_string('%.2f', np.abs(100*(self.volts.max().max()-1)))}% (Limite Considerado: {locale.format_string('%.2f', 100*VMAX-100)}%);")
-            self.logger.info(f"...Pior Carregamento (Máximo Carregamento de Vão): {locale.format_string('%.2f', 100*self.amps.max().max())}% (Limite Considerado: {locale.format_string('%.2f', 100*IMAX)}%);")
-            self.logger.info(f"...Carregamento do Transformador: {locale.format_string('%.2f', 100*self.s_array[-1])}% (Limite Considerado: {locale.format_string('%.2f', 100*SMAX)}%);")
+            self.logger.info(f"...Subtensão (Queda de Tensão Máxima): {locale.format_string('%.2f', self.queda_tensao)}% (Limite Considerado: {locale.format_string('%.2f', 100-100*VMIN)}%);")
+            self.logger.info(f"...Sobretensão (Elevação de Tensão Máxima): {locale.format_string('%.2f', self.elevacao_tensao)}% (Limite Considerado: {locale.format_string('%.2f', 100*VMAX-100)}%);")
+            self.logger.info(f"...Pior Carregamento (Máximo Carregamento de Vão): {locale.format_string('%.2f', self.carregamento_max_vao)}% (Limite Considerado: {locale.format_string('%.2f', 100*IMAX)}%);")
+            self.logger.info(f"...Carregamento do Transformador: {locale.format_string('%.2f', self.carregamento_max_trafo)}% (Limite Considerado: {locale.format_string('%.2f', 100*SMAX)}%);")
             # self.logger.info(f"{self.l_array}")
             self.logger.info(f"O fator limitante da MDD é: {self.fator_limitante}")
             
