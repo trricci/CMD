@@ -8,7 +8,7 @@ from datetime import datetime
 from CMD import VERSION, DB_REMOTO
 
 if DB_REMOTO:
-    PATH_DB = f'//pflsp-ap1/aplicativos/GIS/Cálculos/CMD/BD/log_cmd_{dt.datetime.now().strftime("%Y%m")}.db'
+    PATH_DB = f'//pflsp-ap1/aplicativos/GIS/Cálculos/RESN/DBsCMD/log_cmd_{dt.datetime.now().strftime("%Y%m")}.db'
 else:
     PATH_DB = f'C:/CMD/log_cmd_{dt.datetime.now().strftime("%Y%m")}.db'
 
