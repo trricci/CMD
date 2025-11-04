@@ -1167,6 +1167,7 @@ class CMD():
         
         doc.Fields.Update()
         doc.Save()
+        doc.SaveAs(rf"{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Memória de Cálculo {self.nota}.pdf", FileFormat=17)
         doc.Close()
         word_app.Quit()
         
