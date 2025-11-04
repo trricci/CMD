@@ -835,7 +835,7 @@ class CMD():
             #"FP" : fp_str,
             "PROPORC" : locale.format_string('%.2f', (100 * self.K_prop)),
             
-            "OBS" : 'N/A'
+            "OBS" : f"Cálculo realizado pelo usuário {os.environ['USERNAME']} utilizando a ferramenta CMD - Cálculo de Máxima Demanda, Versão {VERSION} empregando o método de simulação de fluxo de potência para cálculo da máxima demanda disponibilizada."
             
             # "CRGVIG" : locale.format_string('%.2f', self.DE),
             # "CRGDEC" : locale.format_string('%.2f', self.DTS),
