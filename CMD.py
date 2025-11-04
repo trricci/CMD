@@ -910,13 +910,13 @@ class CMD():
             
             self.logger.info(f'O fator limitante da MDD é: "Carregamento do Transformador"')
             
-            self.logger.info(f"Iniciando o cálculo do Fator de Proporcionalidade da Obra (K)...")
+            self.logger.info(f"Iniciando o cálculo do Índice de Proporcionalização da Obra (K)...")
             self.K_prop = (self.DTS - self.DE) / (self.MDD - self.DE)
-            self.logger.info(f"O Fator de Proporcionalidade da Obra (K) é de {locale.format_string('%.2f', 100*self.K_prop)}%...")
+            self.logger.info(f"O Índice de Proporcionalização da Obra (K) é de {locale.format_string('%.2f', 100*self.K_prop)}%...")
             
             self.create_memoria_calculo()
             
-            self.logger.info("Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e Fator de Proporcionalidade da Obra (K) calculados com sucesso!")
+            self.logger.info("Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e Índice de Proporcionalização da Obra (K) calculados com sucesso!")
             self.logger.info(f"...MDD = {locale.format_string('%.2f kW.', self.MDD)}")
             self.logger.info(f"...K = {locale.format_string('%.2f', 100*self.K_prop)}%")
             
@@ -953,9 +953,9 @@ class CMD():
             # self.logger.info(f"{self.l_array}")
             self.logger.info(f"O fator limitante da MDD é: {self.fator_limitante}")
             
-            self.logger.info(f"Iniciando o cálculo do Fator de Proporcionalidade da Obra (K)...")
+            self.logger.info(f"Iniciando o cálculo do Índice de Proporcionalização da Obra (K)...")
             self.K_prop = (self.DTS - self.DE) / (self.MDD - self.DE)
-            self.logger.info(f"O Fator de Proporcionalidade da Obra (K) é de {locale.format_string('%.2f', 100*self.K_prop)}%...")
+            self.logger.info(f"O Índice de Proporcionalização da Obra (K) é de {locale.format_string('%.2f', 100*self.K_prop)}%...")
             
             self.logger.info("Elaborando as figuras com os resultados das simulações (memória de cálculo)...")
             self.plot_increase()
@@ -984,7 +984,7 @@ class CMD():
             
             self.create_memoria_calculo()
             
-            self.logger.info("Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e Fator de Proporcionalidade da Obra (K) calculados com sucesso!")
+            self.logger.info("Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e Índice de Proporcionalização da Obra (K) calculados com sucesso!")
             self.logger.info(f"...MDD = {locale.format_string('%.2f kW.', self.MDD)}")
             self.logger.info(f"...K = {locale.format_string('%.2f', 100*self.K_prop)}%")
     

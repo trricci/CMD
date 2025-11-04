@@ -90,7 +90,7 @@ while True:
     modo = Prompt.ask('''[bright_cyan]\n Digite a opção desejada:[bright_cyan]\n
 [bold green]1   [grey89]Configurações Iniciais
 [bold green]2   [grey89]Importar e Preparar a Rede Secundária Extraída do GIS
-[bold green]3   [grey89]Calcular a Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e o Fator de Proporcionalidade da Obra (k) via Simulação de Fluxo de Potência
+[bold green]3   [grey89]Calcular a Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e o Índice de Proporcionalização da Obra (k) via Simulação de Fluxo de Potência
 [bright_cyan]-------------------------------
 [dark_orange]H   [dark orange]Ajuda / Glossário de Termos [bold bright_red][Em Construção][dark_orange]
 [dark_orange]S   [dark orange]Sobre o Programa CMD [bold bright_red][Em Construção][dark_orange]
@@ -156,7 +156,7 @@ while True:
         print("")
         print(" [bold yellow]1 - [bold green]Configurações Iniciais: [white]descrição em construção...")
         print(" [bold yellow]2 - [bold green]Importar Rede Secundária Extraída do GIS: [white]descrição em construção...")
-        print(" [bold yellow]3 - [bold green]Calcular a Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e o Fator de Proporcionalidade da Obra (k) via Simulação de Fluxo de Potência: [white]descrição em construção...")
+        print(" [bold yellow]3 - [bold green]Calcular a Máxima Demanda Disponibilizada (MDD) no Ponto de Conexão e o Índice de Proporcionalização da Obra (k) via Simulação de Fluxo de Potência: [white]descrição em construção...")
         #print(" [bold yellow]4 - [bold green]Calcular a Participação Financeira do Consumidor (PFC) e o Encargo de Responsabilidade da Distribuidora (ERD): [white]descrição em construção...")
         #print(" [bold yellow]5 - [bold green]Emitir Memória de Cálculo: [white]descrição em construção...")
         print("")
