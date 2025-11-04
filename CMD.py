@@ -491,6 +491,25 @@ class CMD():
         self.logger.info(f"...Fase C: {locale.format_string('%.2f', self.carga_fase_C)}%")
         self.logger.info(f"Corrente de Neutro: {locale.format_string('%.2f', self.corrente_neutro)}% da corrente nominal do transformador")
         
+        desequilibrio_tensao = pd.DataFrame([(bus.Name, bus.NumNodes, 100*bus.SeqVoltages[0]/bus.SeqVoltages[1], 100*bus.SeqVoltages[2]/bus.SeqVoltages[1]) for bus in self.dss.Bus], columns=['Barra', 'NumNodes', 'CUF0', 'CUF2']).set_index('Barra')
+        temp = desequilibrio_tensao[desequilibrio_tensao['NumNodes'] == 3]
+        max_volt_unb_0 = temp['CUF0'].max()
+        max_volt_unb_2 = temp['CUF2'].max()
+        if (max_volt_unb_0 > 2) | (max_volt_unb_2 > 2):
+            b = self.dss.Bus[temp['CUF0'].idxmax()]
+            self.logger.warning("ATENÇÃO! Foi encontrado desequilíbrio de tensão superior a 2% na rede secundária em estudo.")
+            self.logger.warning(f"...Tensões no nó {temp['CUF0'].idxmax()}...")
+            self.logger.warning(f"......Fase A: {np.round(b.VMagAngle[0],3)}∠{np.round(b.VMagAngle[1],3)}° Volts")
+            self.logger.warning(f"......Fase B: {np.round(b.VMagAngle[2],3)}∠{np.round(b.VMagAngle[3],3)}° Volts")
+            self.logger.warning(f"......Fase C: {np.round(b.VMagAngle[4],3)}∠{np.round(b.VMagAngle[5],3)}° Volts")
+            if temp['CUF0'].idxmax() != temp['CUF2'].idxmax():
+                b = self.dss.Bus[temp['CUF2'].idxmax()]
+                self.logger.warning("ATENÇÃO! Foi encontrado desequilíbrio de tensão superior a 2% na rede secundária em estudo.")
+                self.logger.warning(f"...Tensões no nó {temp['CUF2'].idxmax()}...")
+                self.logger.warning(f"......Fase A: {np.round(b.VMagAngle[0],3)}∠{np.round(b.VMagAngle[1],3)}° Volts")
+                self.logger.warning(f"......Fase B: {np.round(b.VMagAngle[2],3)}∠{np.round(b.VMagAngle[3],3)}° Volts")
+                self.logger.warning(f"......Fase C: {np.round(b.VMagAngle[4],3)}∠{np.round(b.VMagAngle[5],3)}° Volts")
+        
         self.logger.info("Identificando a Carga de Estudo (CE)...")
         
         self.interest_loads = [item for item in self.dss.Load.Name if 'ce' in item]
