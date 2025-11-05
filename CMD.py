@@ -508,7 +508,7 @@ class CMD():
         self.logger.info(f"...Fase C: {locale.format_string('%.2f', self.carga_fase_C)}%")
         self.logger.info(f"Corrente de Neutro: {locale.format_string('%.2f', self.corrente_neutro)}% da corrente nominal do transformador")
         
-        amps = np.abs(self.dss.Transformer.Currents().reshape(2,-1)[-1])
+        amps = np.abs(self.dss.Transformer.Currents().reshape(2,-1)[-1][0:3])
         self.ids = np.max(amps)/np.mean(amps)
         self.idi = np.min(amps)/np.mean(amps)
         
