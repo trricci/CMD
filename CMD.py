@@ -471,7 +471,7 @@ class CMD():
     def change_service_cable(self, bitola):
     
         self.logger.info("Iniciando a troca do Ramal de Ligação...")
-        if bitola in self.dss.LineCode.Name:
+        if bitola.lower() in self.dss.LineCode.Name:
             self.dss.Line[self.ramal_ligacao].LineCode.Name = bitola.lower()
         else:
             nphases = self.dict_linecodes[bitola]['nphases']
@@ -585,8 +585,48 @@ class CMD():
                 'Ligação Nova BT - Entrada Subterranea'
                 ]:
             
+            ramais = [
+                '10 mm² - Quadruplex',
+                '16 mm² - Quadruplex',
+                '25 mm² - Quadruplex',
+                '35 mm² - Quadruplex',
+                '50 mm² - Quadruplex',
+                '70 mm² - Quadruplex',
+                '120 mm² - Quadruplex',
+                '2x70 mm² - Quadruplex',
+                '2x120 mm² - Quadruplex'
+                ]
+            
+            self.Categoria_Ligacao = 'N/A'
+            
+            rcount = 1
+            ramaisstr = ''
+            for ramal in ramais:
+                ramaisstr = ramaisstr + f'[bold green] [{rcount}] [bold yellow]{ramal}\n'
+                rcount += 1
+            
             print("")
-            res = Prompt.ask(f' [bright_cyan]Selecione o "Ramal de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{categoriasstr}\n[bright_cyan]')            
+            res = Prompt.ask(f' [bright_cyan]Selecione o "Ramal de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{ramaisstr}\n[bright_cyan]')            
+            
+            choosen_ramal = ramais[int(res)-1]
+            self.logger.info(f"Foi selecionado o Ramal de Ligação {choosen_ramal}...")
+            
+            fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
+            fases_norma = 3
+            
+            bitola_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper().split('P')[-1].split('(')[0])
+            bitola_norma = int(choosen_ramal.split(' ')[0].replace('2x', ''))
+            qtde = 2 if '2x' in choosen_ramal else 1
+            
+            self.ramal_modificado = False
+            if (fases_existente < fases_norma) or (bitola_existente < bitola_norma):
+                self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao informado ({choosen_ramal}) e será substituído para o cálculo da MDD...')
+                self.change_service_cable(f"3P{bitola_norma}(A{bitola_norma})")
+                self.ramal_modificado = True
+            elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
+                self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao informado ({choosen_ramal}): será mantido ramal da base GIS para o cálculo da MDD...')
+            else:
+                self.logger.info(f'Ramal de Ligação existente igual ao informado ({choosen_ramal}) e será mantido para o cálculo da MDD...')
             
         else:
             
@@ -613,28 +653,22 @@ class CMD():
             choosen_categoria = categorias[int(res)-1]
             self.Categoria_Ligacao = choosen_categoria
             self.logger.info(f"Foi selecionada a Categoria de Ligação {choosen_categoria}, que deve ser atendida com Ramal de Ligação {self.dict_padrao_ramal[self.Categoria_Ligacao]} conforme a GED 4319...")
-        
-        
-        
-        
-        
-        #######################################################################
-        
-        fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
-        fases_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao][0])
-        
-        bitola_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper().split('P')[-1].split('(')[0])
-        bitola_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao].split('P')[-1].split('(')[0])
-        
-        self.ramal_modificado = False
-        if (fases_existente < fases_norma) or (bitola_existente < bitola_norma):
-            self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será substituído para o cálculo da MDD...')
-            self.change_service_cable(self.dict_padrao_ramal[self.Categoria_Ligacao])
-            self.ramal_modificado = True
-        elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
-            self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}): será mantido ramal da base GIS para o cálculo da MDD...')
-        else:
-            self.logger.info(f'Ramal de Ligação existente igual ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será mantido para o cálculo da MDD...')
+            
+            fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
+            fases_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao][0])
+            
+            bitola_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper().split('P')[-1].split('(')[0])
+            bitola_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao].split('P')[-1].split('(')[0])
+            
+            self.ramal_modificado = False
+            if (fases_existente < fases_norma) or (bitola_existente < bitola_norma):
+                self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será substituído para o cálculo da MDD...')
+                self.change_service_cable(self.dict_padrao_ramal[self.Categoria_Ligacao])
+                self.ramal_modificado = True
+            elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
+                self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}): será mantido ramal da base GIS para o cálculo da MDD...')
+            else:
+                self.logger.info(f'Ramal de Ligação existente igual ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será mantido para o cálculo da MDD...')
         
         return 'ok'
     
