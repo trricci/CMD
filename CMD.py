@@ -286,7 +286,7 @@ class CMD():
                     res = Prompt.ask(' [bright_cyan]Seleção inválida! Selecione a distribuidora:\n\n [1] [cyan]CPFL Paulista\n[bright_cyan] [2] [dark_orange]CPFL Piratininga\n[bright_cyan] [3] [green]CPFL Santa Cruz\n[bright_cyan] [4] [red]RGE\n\n')
                     loop = True
         
-        if self.dados_nota[0] == ' ':
+        if (self.dados_nota[0] == ' ') and (self.tipo_atividade != 'Reforma e Adequação - Aum. de Carga Edif'):
             self.ligacao_nova = True
             self.logger.info(f"Tipo de Atividade: {self.tipo_atividade}")
             self.logger.info(f"ATENÇÃO! UC não encontrada. Trata-se de LIGAÇÃO NOVA. Demanda Existente (DE) = 0 kW")
@@ -294,13 +294,19 @@ class CMD():
             self.uc = None
         else:
             self.ligacao_nova = False
-            self.logger.info(f"Unidade Consumidora: {self.dados_nota[0]}, Tipo de Atividade: {self.tipo_atividade}")
-            self.uc = self.dados_nota[0]
+            if self.dados_nota[0] == ' ':
+                self.logger.info(f"Tipo de Atividade: {self.tipo_atividade}")
+            else:
+                self.logger.info(f"Unidade Consumidora: {self.dados_nota[0]}, Tipo de Atividade: {self.tipo_atividade}")
+                self.uc = self.dados_nota[0]
             print("")
             self.Demanda_Vigente_input = Prompt.ask(' [bright_cyan]Informe a Demanda Existente (DE), em kW')
             self.DE = float(self.Demanda_Vigente_input.replace(',', '.'))
             print("")
-            self.logger.info(f"A demanda existente (DE, i.e., a demanda atual) da UC {self.dados_nota[0]} é de {locale.format_string('%.2f kW', self.DE)}...")
+            if self.dados_nota[0] == ' ':
+                self.logger.info(f"A demanda existente (DE, i.e., a demanda atual) é de {locale.format_string('%.2f kW', self.DE)}...")
+            else:
+                self.logger.info(f"A demanda existente (DE, i.e., a demanda atual) da UC {self.dados_nota[0]} é de {locale.format_string('%.2f kW', self.DE)}...")
         
         self.logger.info(f'Criando a pasta da nota {self.nota} no diretório "Documentos Emitidos"')
         if self.nota not in os.listdir(rf"{self.BASE_FOLDER}\Documentos Emitidos"):
