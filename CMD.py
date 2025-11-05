@@ -523,19 +523,20 @@ class CMD():
         temp = desequilibrio_tensao[desequilibrio_tensao['NumNodes'] == 3]
         max_volt_unb_0 = temp['CUF0'].max()
         max_volt_unb_2 = temp['CUF2'].max()
-        if (max_volt_unb_0 > 2) | (max_volt_unb_2 > 2):
-            b = self.dss.Bus[temp['CUF0'].idxmax()]
-            self.logger.warning("ATENÇÃO! Foi encontrado desequilíbrio de tensão superior a 2% na rede secundária em estudo.")
-            self.logger.warning(f"...Tensões no nó {temp['CUF0'].idxmax()}...")
+        #if (max_volt_unb_0 > 3) | (max_volt_unb_2 > 3):
+        if (max_volt_unb_2 > 3):
+            b = self.dss.Bus[temp['CUF2'].idxmax()]
+            self.logger.warning("ATENÇÃO! Foi encontrado desequilíbrio de tensão superior a 3% na rede secundária em estudo.")
+            self.logger.warning(f"...Tensões no nó {temp['CUF2'].idxmax()}...")
             self.logger.warning(f"......Fase A: {np.round(b.VMagAngle[0],3)}∠{np.round(b.VMagAngle[1],3)}° Volts")
             self.logger.warning(f"......Fase B: {np.round(b.VMagAngle[2],3)}∠{np.round(b.VMagAngle[3],3)}° Volts")
             self.logger.warning(f"......Fase C: {np.round(b.VMagAngle[4],3)}∠{np.round(b.VMagAngle[5],3)}° Volts")
-            if temp['CUF0'].idxmax() != temp['CUF2'].idxmax():
-                b = self.dss.Bus[temp['CUF2'].idxmax()]
-                self.logger.warning(f"...Tensões no nó {temp['CUF2'].idxmax()}...")
-                self.logger.warning(f"......Fase A: {np.round(b.VMagAngle[0],3)}∠{np.round(b.VMagAngle[1],3)}° Volts")
-                self.logger.warning(f"......Fase B: {np.round(b.VMagAngle[2],3)}∠{np.round(b.VMagAngle[3],3)}° Volts")
-                self.logger.warning(f"......Fase C: {np.round(b.VMagAngle[4],3)}∠{np.round(b.VMagAngle[5],3)}° Volts")
+            # if temp['CUF0'].idxmax() != temp['CUF2'].idxmax():
+                # b = self.dss.Bus[temp['CUF0'].idxmax()]
+                # self.logger.warning(f"...Tensões no nó {temp['CUF0'].idxmax()}...")
+                # self.logger.warning(f"......Fase A: {np.round(b.VMagAngle[0],3)}∠{np.round(b.VMagAngle[1],3)}° Volts")
+                # self.logger.warning(f"......Fase B: {np.round(b.VMagAngle[2],3)}∠{np.round(b.VMagAngle[3],3)}° Volts")
+                # self.logger.warning(f"......Fase C: {np.round(b.VMagAngle[4],3)}∠{np.round(b.VMagAngle[5],3)}° Volts")    
             self.logger.warning("O estudo prosseguirá normalmente, porém recomenda-se avaliar possível rebalanceamento da rede secundária.")
         
         self.logger.info("Identificando a Carga de Estudo (CE)...")
