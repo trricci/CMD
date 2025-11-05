@@ -490,11 +490,157 @@ class CMD():
             self.dss.Line[self.ramal_ligacao].LineCode = self.dss.LineCode[bitola.lower()]
         self.logger.info("Troca do Ramal de Ligação finalizada com sucesso!")
     
-    def get_interest_bus(self):
+    def avalia_ramal_coletivo(self):
     
-        self.kiter -= 1
-        self.simulate()
+        ramais = [
+            '10 mm² - Quadruplex',
+            '16 mm² - Quadruplex',
+            '25 mm² - Quadruplex',
+            '35 mm² - Quadruplex',
+            '50 mm² - Quadruplex',
+            '70 mm² - Quadruplex',
+            '120 mm² - Quadruplex',
+            '2x70 mm² - Quadruplex',
+            '2x120 mm² - Quadruplex'
+            ]
         
+        self.Categoria_Ligacao = 'N/A'
+        
+        rcount = 1
+        ramaisstr = ''
+        for ramal in ramais:
+            ramaisstr = ramaisstr + f'[bold green] [{rcount}] [bold yellow]{ramal}\n'
+            rcount += 1
+        
+        print("")
+        res = Prompt.ask(f' [bright_cyan]Selecione o "Ramal de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{ramaisstr}\n[bright_cyan]')            
+        
+        choosen_ramal = ramais[int(res)-1]
+        self.logger.info(f"Foi selecionado o Ramal de Ligação {choosen_ramal}...")
+        
+        fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
+        fases_norma = 3
+        
+        bitola_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper().split('P')[-1].split('(')[0])
+        bitola_norma = int(choosen_ramal.split(' ')[0].replace('2x', ''))
+        qtde = 2 if '2x' in choosen_ramal else 1
+        
+        self.ramal_modificado = False
+        if (fases_existente < fases_norma) or (bitola_existente < bitola_norma):
+            self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao informado ({choosen_ramal}) e será substituído para o cálculo da MDD...')
+            self.change_service_cable(f"3P{bitola_norma}(A{bitola_norma})")
+            self.ramal_modificado = True
+        elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
+            self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao informado ({choosen_ramal}): será mantido ramal da base GIS para o cálculo da MDD...')
+        else:
+            self.logger.info(f'Ramal de Ligação existente igual ao informado ({choosen_ramal}) e será mantido para o cálculo da MDD...')
+    
+    def avalia_ramal_subterraneo(self):
+    
+        pass
+    
+    def avalia_ramal_individual(self):
+    
+        if (self.tensao_secundaria == 0.220) and (self.delta_wye):
+            if self.kva0 <= 23:
+                categoria_correta = 'C1'
+                ramal_correto = '3P10(A10)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 127/220 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 30:
+                categoria_correta = 'C2'
+                ramal_correto = '3P16(A16)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 127/220 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 38:
+                categoria_correta = 'C3'
+                ramal_correto = '3P25(A25)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 127/220 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 47:
+                categoria_correta = 'C4'
+                ramal_correto = '3P35(A35)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 127/220 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 57:
+                categoria_correta = 'C5'
+                ramal_correto = '3P50(A50)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 127/220 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 76:
+                categoria_correta = 'C6'
+                ramal_correto = '3P70(A70)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 127/220 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            else:
+                self.logger.warning(f"Demanda aparente da CE: ({locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 127/220 V); NÃO FOI POSSÍVEL IDENTIFICAR A CATEGORIA/RAMAL DE LIGAÇÃO PADRONIZADOS.")
+        elif (self.tensao_secundaria == 0.380) and (self.delta_wye):
+            if self.kva0 <= 26:
+                categoria_correta = 'C7'
+                ramal_correto = '3P10(A10)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 220/380 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 40:
+                categoria_correta = 'C8'
+                ramal_correto = '3P16(A16)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 220/380 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 52:
+                categoria_correta = 'C9'
+                ramal_correto = '3P25(A25)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 220/380 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 66:
+                categoria_correta = 'C10'
+                ramal_correto = '3P35(A35)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 220/380 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            elif self.kva0 <= 82:
+                categoria_correta = 'C11'
+                ramal_correto = '3P35(A35)'
+                self.logger.info(f"Demanda aparente da CE: {locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 220/380 V; Categoria de Ligação: {categoria_correta}/{ramal_correto}.")
+            else:
+                self.logger.warning(f"Demanda aparente da CE: ({locale.format_string('%.2f kVA', self.kva0)}; Tensão de atendimento: 220/380 V); NÃO FOI POSSÍVEL IDENTIFICAR A CATEGORIA/RAMAL DE LIGAÇÃO PADRONIZADOS.")
+        
+        if self.delta_wye and self.tensao_secundaria == 0.220:
+            categorias = list(self.dict_padrao_ramal_127_220.keys())
+            self.dict_padrao_ramal = self.dict_padrao_ramal_127_220
+        elif self.delta_wye and self.tensao_secundaria == 0.380:
+            categorias = list(self.dict_padrao_ramal_220_380.keys())
+            self.dict_padrao_ramal = self.dict_padrao_ramal_220_380
+        else:
+            self.logger.error(f"ERRO! Ferramenta não prevê transformadores com conexão diferente de Delta/Estrela ou Tensões Secundárias de {1e3*self.tensao_secundaria} (i.e., diferentes de 220 ou de 380 V). Favor contactar responsável.")
+            return 'error'
+        
+        ccount = 1
+        categoriasstr = ''
+        for categoria in categorias:
+            categoriasstr = categoriasstr + f'[bold green] [{ccount}] [bold yellow]{categoria}\n'
+            ccount += 1
+        
+        print("")
+        res = Prompt.ask(f' [bright_cyan]Selecione a "Categoria de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{categoriasstr}\n[bright_cyan]')
+        
+        print("")
+        choosen_categoria = categorias[int(res)-1]
+        self.Categoria_Ligacao = choosen_categoria
+        if self.Categoria_Ligacao == categoria_correta:
+            self.logger.info(f"Foi selecionada a Categoria de Ligação {choosen_categoria}, que deve ser atendida com Ramal de Ligação {self.dict_padrao_ramal[self.Categoria_Ligacao]} conforme a GED 4319...")
+        else:
+            self.logger.error(f"ERRO! A demanda aparente solicitada ({locale.format_string('%.2f kVA', self.kva0)}) é incompatível com a categoria de ligação selecionada ({choosen_categoria})!")
+            self.logger.error(f"Inicie novamente o processo de importar e preparar a rede secundária extraída do GIS.")
+            return 'error'
+        
+        fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
+        fases_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao][0])
+        
+        bitola_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper().split('P')[-1].split('(')[0])
+        bitola_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao].split('P')[-1].split('(')[0])
+        
+        self.ramal_modificado = False
+        if (fases_existente < fases_norma) or (bitola_existente < bitola_norma):
+            self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será substituído para o cálculo da MDD...')
+            self.change_service_cable(self.dict_padrao_ramal[self.Categoria_Ligacao])
+            self.ramal_modificado = True
+        elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
+            self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}): será mantido ramal da base GIS para o cálculo da MDD...')
+        else:
+            self.logger.info(f'Ramal de Ligação existente igual ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será mantido para o cálculo da MDD...')
+        
+        return 'ok'
+    
+    def avalia_condicoes_rede(self):
+    
         self.tensao_secundaria = self.dss.Transformer[0].kVs[-1]
         
         self.delta_wye = False
@@ -544,6 +690,15 @@ class CMD():
                 # self.logger.warning(f"......Fase B: {np.round(b.VMagAngle[2],3)}∠{np.round(b.VMagAngle[3],3)}° Volts")
                 # self.logger.warning(f"......Fase C: {np.round(b.VMagAngle[4],3)}∠{np.round(b.VMagAngle[5],3)}° Volts")    
             self.logger.warning("O estudo prosseguirá normalmente, porém recomenda-se avaliar possível rebalanceamento da rede secundária.")
+    
+    def get_interest_bus(self):
+    
+        self.kiter -= 1
+        self.simulate()
+        
+        self.avalia_condicoes_rede()
+        
+        #######################################################################
         
         self.logger.info("Identificando a Carga de Estudo (CE)...")
         
@@ -565,117 +720,38 @@ class CMD():
             self.logger.error("ERRO! O arquivo carregado contém mais de uma carga de estudo! Por favor verifique o estudo no GIS e tente novamente.")
             return 'error'
         
+        #######################################################################
+        
         self.kW0 = [self.dss.Load[item].kW for item in self.dss.Load.Name if 'ce' in item]
         self.DTS = np.sum(self.kW0)
         self.logger.info(f"Identificada a Demanda Total Solicitada (DTS) pelo consumidor: {locale.format_string('%.2f kW', self.DTS)}...")
         self.l_array.append(np.sum(self.kW0))
         
+        self.kva0 = np.sum([np.sqrt(self.dss.Load[item].kW**2 + self.dss.Load[item].kvar**2) for item in self.dss.Load.Name if 'ce' in item])
+        
+        #######################################################################
+        
         self.build_graph()
         
         self.logger.info("Identificando o Ramal de Ligação/Conexão da Carga de Estudo...")
-        
-        # temp = [item for item in self.dss.Line.Name if (self.dss.Line[item].Bus2.split('.')[0] == self.interest_bus[0].split('.')[0])]
-        # if len(temp) == 1:
-        #     self.ramal_ligacao = temp[0]
         self.ramal_ligacao = self.critical_path[-1]['Name']
-        
         self.ramal_existente = self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()
-        
         self.logger.info(f"Ramal de Ligação/Conexão da Carga de Estudo identificado com sucesso! Arranjo: {self.ramal_existente}")
         
         #######################################################################
         
-        if self.tipo_atividade in [
-                'Reforma e Adequação - Aum. de Carga Edif',
-                'Ligação Nova Edificio - Coletivo',
-                'Ligação Nova BT -  Medição Agrupada',
-                'Ligação Nova BT - Entrada Subterranea'
-                ]:
-            
-            ramais = [
-                '10 mm² - Quadruplex',
-                '16 mm² - Quadruplex',
-                '25 mm² - Quadruplex',
-                '35 mm² - Quadruplex',
-                '50 mm² - Quadruplex',
-                '70 mm² - Quadruplex',
-                '120 mm² - Quadruplex',
-                '2x70 mm² - Quadruplex',
-                '2x120 mm² - Quadruplex'
-                ]
-            
-            self.Categoria_Ligacao = 'N/A'
-            
-            rcount = 1
-            ramaisstr = ''
-            for ramal in ramais:
-                ramaisstr = ramaisstr + f'[bold green] [{rcount}] [bold yellow]{ramal}\n'
-                rcount += 1
-            
-            print("")
-            res = Prompt.ask(f' [bright_cyan]Selecione o "Ramal de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{ramaisstr}\n[bright_cyan]')            
-            
-            choosen_ramal = ramais[int(res)-1]
-            self.logger.info(f"Foi selecionado o Ramal de Ligação {choosen_ramal}...")
-            
-            fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
-            fases_norma = 3
-            
-            bitola_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper().split('P')[-1].split('(')[0])
-            bitola_norma = int(choosen_ramal.split(' ')[0].replace('2x', ''))
-            qtde = 2 if '2x' in choosen_ramal else 1
-            
-            self.ramal_modificado = False
-            if (fases_existente < fases_norma) or (bitola_existente < bitola_norma):
-                self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao informado ({choosen_ramal}) e será substituído para o cálculo da MDD...')
-                self.change_service_cable(f"3P{bitola_norma}(A{bitola_norma})")
-                self.ramal_modificado = True
-            elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
-                self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao informado ({choosen_ramal}): será mantido ramal da base GIS para o cálculo da MDD...')
-            else:
-                self.logger.info(f'Ramal de Ligação existente igual ao informado ({choosen_ramal}) e será mantido para o cálculo da MDD...')
-            
+        if self.tipo_atividade in ['Reforma e Adequação - Aum. de Carga Edif', 'Ligação Nova Edificio - Coletivo', 'Ligação Nova BT -  Medição Agrupada']:
+            self.avalia_ramal_coletivo()
+        
+        elif self.tipo_atividade in ['Ligação Nova BT - Entrada Subterranea']:
+            self.avalia_ramal_subterraneo()
+        
         else:
-            
-            if self.delta_wye and self.tensao_secundaria == 0.220:
-                categorias = list(self.dict_padrao_ramal_127_220.keys())
-                self.dict_padrao_ramal = self.dict_padrao_ramal_127_220
-            elif self.delta_wye and self.tensao_secundaria == 0.380:
-                categorias = list(self.dict_padrao_ramal_220_380.keys())
-                self.dict_padrao_ramal = self.dict_padrao_ramal_220_380
-            else:
-                self.logger.error(f"ERRO! Ferramenta não prevê transformadores com conexão diferente de Delta/Estrela ou Tensões Secundárias de {1e3*self.tensao_secundaria} (i.e., diferentes de 220 ou de 380 V). Favor contactar responsável.")
+            ret = self.avalia_ramal_individual()
+            if ret == 'error':
                 return 'error'
-            
-            ccount = 1
-            categoriasstr = ''
-            for categoria in categorias:
-                categoriasstr = categoriasstr + f'[bold green] [{ccount}] [bold yellow]{categoria}\n'
-                ccount += 1
-            
-            print("")
-            res = Prompt.ask(f' [bright_cyan]Selecione a "Categoria de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{categoriasstr}\n[bright_cyan]')
-            
-            print("")
-            choosen_categoria = categorias[int(res)-1]
-            self.Categoria_Ligacao = choosen_categoria
-            self.logger.info(f"Foi selecionada a Categoria de Ligação {choosen_categoria}, que deve ser atendida com Ramal de Ligação {self.dict_padrao_ramal[self.Categoria_Ligacao]} conforme a GED 4319...")
-            
-            fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
-            fases_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao][0])
-            
-            bitola_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper().split('P')[-1].split('(')[0])
-            bitola_norma = int(self.dict_padrao_ramal[self.Categoria_Ligacao].split('P')[-1].split('(')[0])
-            
-            self.ramal_modificado = False
-            if (fases_existente < fases_norma) or (bitola_existente < bitola_norma):
-                self.logger.warning(f'Ramal de Ligação existente ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) inferior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será substituído para o cálculo da MDD...')
-                self.change_service_cable(self.dict_padrao_ramal[self.Categoria_Ligacao])
-                self.ramal_modificado = True
-            elif (fases_existente > fases_norma) or (bitola_existente > bitola_norma):
-                self.logger.warning(f'Ramal de Ligação existente na base GIS ({self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()}) é superior ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}): será mantido ramal da base GIS para o cálculo da MDD...')
-            else:
-                self.logger.info(f'Ramal de Ligação existente igual ao especificado na GED 4319 ({self.dict_padrao_ramal[self.Categoria_Ligacao]}) e será mantido para o cálculo da MDD...')
+        
+        #######################################################################
         
         return 'ok'
     
