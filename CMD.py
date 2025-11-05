@@ -372,7 +372,7 @@ class CMD():
             filesstr = filesstr + f'[bold yellow] [{fcount}] [bold green]{file} [grey78]{fs.loc[file]}\n'
             fcount += 1
         
-        filesstr = filesstr + f'[bold yellow] [A] [bold green]Quero digitar o nome do arquivo...\n' + f'[bold yellow] [B] [bold green]Ligação nova em área rural com extensão de rede primária e atendimento em trafo exclusivo (sem rede secundária existente)...\n'
+        filesstr = filesstr + f'[bold yellow] [A] [bold green]Quero digitar o nome do arquivo...\n' + f'[bold yellow] [B] [bold green]Atendimento via trafo exclusivo (sem rede secundária existente)...\n'
         
         res = Prompt.ask(f' [bright_cyan]Selecione o arquivo exportado do GIS-D após o projeto da obra:\n\n{filesstr}[bright_cyan]\n')
         
