@@ -491,6 +491,17 @@ class CMD():
         self.logger.info(f"...Fase C: {locale.format_string('%.2f', self.carga_fase_C)}%")
         self.logger.info(f"Corrente de Neutro: {locale.format_string('%.2f', self.corrente_neutro)}% da corrente nominal do transformador")
         
+        amps = np.abs(self.dss.Transformer.Currents().reshape(2,-1)[-1])
+        self.ids = np.max(amps)/np.mean(amps)
+        self.idi = np.min(amps)/np.mean(amps)
+        
+        self.logger.info(f"Índice de Desbalanceamento Superior: {locale.format_string('%.3f', self.ids)}...")
+        self.logger.info(f"Índice de Desbalanceamento Inferior: {locale.format_string('%.3f', self.idi)}...")
+        
+        if (self.ids > 1.3) | (self.idi < 0.7):
+            self.logger.warning("ATENÇÃO! Foi encontrado Índice de Desbalanceamento fora da faixa na qual o transformador é considerado minimamente balanceado (0.7 a 1.3, conforme GED 13285)!")
+            self.logger.warning("O estudo prosseguirá normalmente, porém recomenda-se avaliar possível rebalanceamento da rede secundária.")
+        
         desequilibrio_tensao = pd.DataFrame([(bus.Name, bus.NumNodes, 100*bus.SeqVoltages[0]/bus.SeqVoltages[1], 100*bus.SeqVoltages[2]/bus.SeqVoltages[1]) for bus in self.dss.Bus], columns=['Barra', 'NumNodes', 'CUF0', 'CUF2']).set_index('Barra')
         temp = desequilibrio_tensao[desequilibrio_tensao['NumNodes'] == 3]
         max_volt_unb_0 = temp['CUF0'].max()
