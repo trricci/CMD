@@ -399,18 +399,19 @@ class CMD():
                 print("")
                 
                 new_tr_string = f'''
-[bold yellow] [1] [bold green]15 kVA (Trifásico)
-[bold yellow] [2] [bold green]30 kVA (Trifásico)
-[bold yellow] [3] [bold green]45 kVA (Trifásico)
-[bold yellow] [4] [bold green]75 kVA (Trifásico)
-[bold yellow] [5] [bold green]112,5 kVA (Trifásico
-[bold yellow] [6] [bold green]150 kVA (Trifásico)
-[bold yellow] [7] [bold green]225 kVA (Trifásico)
-[bold yellow] [8] [bold green]300 kVA (Trifásico)
-[bold yellow] [9] [bold green]10 kVA (Monofásico)
-[bold yellow] [10] [bold green]15 kVA (Monofásico)
-[bold yellow] [11] [bold green]25 kVA (Monofásico)
-[bold yellow] [12] [bold green]50 kVA (Monofásico)\n'''
+[bold yellow] [1] [bold red]10 kVA (Monofásico)
+[bold yellow] [2] [bold green]15 kVA (Monofásico)
+[bold yellow] [3] [bold green]25 kVA (Monofásico)
+[bold yellow] [4] [bold red]50 kVA (Monofásico)
+
+[bold yellow] [5] [bold green]15 kVA (Trifásico)
+[bold yellow] [6] [bold green]30 kVA (Trifásico)
+[bold yellow] [7] [bold green]45 kVA (Trifásico)
+[bold yellow] [8] [bold green]75 kVA (Trifásico)
+[bold yellow] [9] [bold green]112,5 kVA (Trifásico
+[bold yellow] [10] [bold green]150 kVA (Trifásico)
+[bold yellow] [11] [bold green]225 kVA (Trifásico)
+[bold yellow] [12] [bold green]300 kVA (Trifásico)\n'''
                 
                 res = Prompt.ask(f' [bright_cyan]Escolha a potência (kva) do transformador de distribuição que será instalado para atendimento exclusivo à nova ligação:\n{new_tr_string}[brigh_cyan]\n')
                 
@@ -421,11 +422,26 @@ class CMD():
                     #res = Prompt.ask(f' [bright_cyan]Escolha a potência (kva) do transformador de distribuição que será instalado para atendimento exclusivo à nova ligação:\n\n{new_tr_string}[brigh_cyan]\n')
                 
                 else:
-                    pots = [15, 30, 45, 75, 112.5, 150, 225, 300, 10, 15, 25, 50]
+                    pots = [10, 15, 25, 50, 15, 30, 45, 75, 112.5, 150, 225, 300]
                     self.novo_tr_kva = pots[int(res)-1]
-                    print("")
-                    self.logger.info(f"Será instalado um novo transformador de distribuição de {self.novo_tr_kva} kVA para atendimento exclusivo à nova ligação!")
-                    loop = False
+                    #print("")
+                    
+                    if res in ['1', '4']:
+                        print("")
+                        res = Prompt.ask(f' [bright_cyan]Atenção! O transformador selecionado ({self.novo_tr_kva} kVA Monofásico) é de uso restrito. Tem certeza que deseja continuar com essa escolha? [bold green ][S] Sim [bright_cyan]ou [bold red][N] Não\n\n')
+                        
+                        if res in ['s', 'S']:
+                            print("")
+                            self.logger.info(f"Será instalado um novo transformador de distribuição de {self.novo_tr_kva} kVA para atendimento exclusivo à nova ligação!")
+                            loop = False
+                        elif res in ['n', 'N']:
+                            continue
+                        else:
+                            continue
+                    else:
+                        print("")
+                        self.logger.info(f"Será instalado um novo transformador de distribuição de {self.novo_tr_kva} kVA para atendimento exclusivo à nova ligação!")
+                        loop = False
         
         else:
             choosen_file = files[int(res)-1]
