@@ -126,6 +126,8 @@ while True:
                 db.insert_record_estudo(cmd, start_time)
                 db.close_db()
                 cmd.logger.info("Estudo registrado no banco de dados com sucesso!")
+                cmd.set_load(cmd.DTS)
+                cmd.dss.Solution.Solve()
                 cmd.logger.info("Fim do estudo!")
             except:
                 db.close_db()
