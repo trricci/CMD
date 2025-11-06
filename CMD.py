@@ -462,6 +462,13 @@ class CMD():
             
             self.logger.info(f"O caminho completo do arquivo dss selecionado é: {self.dssfile}")
             
+            with open(self.dssfile, 'r', encoding='latin-1') as f:
+                t = f.readlines()
+            self.CPFL_circuit_string = ''.join(t)
+            
+            self.patamar = int(t[3].split(' ')[-1].replace('\n', ''))
+            self.mes_ano = t[4].split(' ')[-1].replace('\n', '')
+            
             self.dss("Clear")
             self.dss(f"Redirect {self.dssfile}")
             ret = self.get_interest_bus()
