@@ -492,6 +492,9 @@ class CMD():
     
     def avalia_ramal_coletivo(self):
     
+        print("")    
+        self.logger.info(f'Ramal de Ligação Aéreo com Atendimento Agrupado: será avaliado o dimensionamento do ramal conforme GEDs 119 e 4319...')
+    
         ramais = [
             '10 mm² - Quadruplex',
             '16 mm² - Quadruplex',
@@ -504,8 +507,6 @@ class CMD():
             '2x120 mm² - Quadruplex'
             ]
         
-        self.Categoria_Ligacao = 'N/A'
-        
         rcount = 1
         ramaisstr = ''
         for ramal in ramais:
@@ -516,6 +517,7 @@ class CMD():
         res = Prompt.ask(f' [bright_cyan]Selecione o "Ramal de Ligação" (GED 13) futura da UC, ou seja, após o aumento de carga solicitado:\n\n{ramaisstr}\n[bright_cyan]')            
         
         choosen_ramal = ramais[int(res)-1]
+        print("")
         self.logger.info(f"Foi selecionado o Ramal de Ligação {choosen_ramal}...")
         
         fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
@@ -537,10 +539,31 @@ class CMD():
     
     def avalia_ramal_subterraneo(self):
     
-        pass
+        print("")
+        self.logger.info(f'Ramal de Ligação Subterrâneo: CE será transferida para o PC do ramal subterrâneo à rede secundária (GED 10126)...')
+        self.logger.info(f'Ramal de Ligação Subterrâneo: o ramal subterrâneo será ignorado nos cálculos...')
+        
+        for load in self.interest_loads:
+            if self.dss.Load[load].Bus1.split('.')[0] == self.dss.Line[self.ramal_ligacao].Bus2.split('.')[0]:
+                temp = self.dss.Load[load].Bus1.split('.')
+                temp[0] = self.dss.Line[self.ramal_ligacao].Bus1.split('.')[0]
+                self.dss.Load[load].Bus1 = '.'.join(temp)
+            elif self.dss.Load[load].Bus1.split('.')[0] == self.dss.Line[self.ramal_ligacao].Bus1.split('.')[0]:
+                temp = self.dss.Load[load].Bus1.split('.')
+                temp[0] = self.dss.Line[self.ramal_ligacao].Bus2.split('.')[0]
+                self.dss.Load[load].Bus1 = '.'.join(temp)
+            else:
+                self.logger.error("ERRO! Não foi possível transferir a CE para o PC do ramal subterrâneo à rede secundária!")
+        
+        self.dss.Line[self.ramal_ligacao].Enabled = False
+        
+        self.logger.info(f'Ramal de Ligação Subterrâneo: CE transferida para o PC do ramal subterrâneo à rede secundária com sucesso!')
     
     def avalia_ramal_individual(self):
     
+        print("")    
+        self.logger.info(f'Ramal de Ligação Aéreo com Atendimento Individual: será avaliado o dimensionamento do ramal conforme GEDs 13 e 4319...')
+        
         if (self.tensao_secundaria == 0.220) and (self.delta_wye):
             if self.kva0 <= 23:
                 categoria_correta = 'C1'
@@ -740,13 +763,29 @@ class CMD():
         
         #######################################################################
         
+        self.Categoria_Ligacao = 'N/A'
+        
         if self.tipo_atividade in ['Reforma e Adequação - Aum. de Carga Edif', 'Ligação Nova Edificio - Coletivo', 'Ligação Nova BT -  Medição Agrupada']:
-            self.avalia_ramal_coletivo()
-        
+            print("")
+            res = Prompt.ask(f' [bright_cyan]O ramal de ligação/conexão será: [green][A] AÉREO [bright_cyan]ou [red][S] SUBTERRÂNEO[bright_cyan]')
+            loop = True
+            while loop:
+                if res in ['a', 'A']:
+                    loop = False
+                    self.ramal_aereo_subterraneo = 'Aéreo'
+                    self.avalia_ramal_coletivo()
+                elif res in ['s', 'A']:
+                    loop = False
+                    self.ramal_aereo_subterraneo = 'Subterrâneo'
+                    self.avalia_ramal_subterraneo()
+                else:
+                    print("")
+                    res = Prompt.ask(f' [red]Opção Inválida! [bright_cyan]O ramal de ligação/conexão será: [green][A] AÉREO [bright_cyan]ou [red][S] SUBTERRÂNEO[bright_cyan]')
         elif self.tipo_atividade in ['Ligação Nova BT - Entrada Subterranea']:
+            self.ramal_aereo_subterraneo = 'Subterrâneo'
             self.avalia_ramal_subterraneo()
-        
         else:
+            self.ramal_aereo_subterraneo = 'Aéreo'
             ret = self.avalia_ramal_individual()
             if ret == 'error':
                 return 'error'
