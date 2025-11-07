@@ -781,7 +781,7 @@ class CMD():
                     loop = False
                     self.ramal_aereo_subterraneo = 'Aéreo'
                     self.avalia_ramal_coletivo()
-                elif res in ['s', 'A']:
+                elif res in ['s', 'S']:
                     loop = False
                     self.ramal_aereo_subterraneo = 'Subterrâneo'
                     self.avalia_ramal_subterraneo()
