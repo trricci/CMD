@@ -485,7 +485,7 @@ class CMD():
     
         self.logger.info("Iniciando a troca do Ramal de Ligação...")
         if bitola.lower() in self.dss.LineCode.Name:
-            self.dss.Line[self.ramal_ligacao].LineCode.Name = bitola.lower()
+            self.dss.Line[self.ramal_ligacao].LineCode = self.dss.LineCode[bitola.lower()]
         else:
             nphases = self.dict_linecodes[bitola]['nphases']
             r1 = self.dict_linecodes[bitola]['r1']
