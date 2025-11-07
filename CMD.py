@@ -1047,7 +1047,7 @@ class CMD():
     def plot_save(self):
     
         self.fig1.savefig(rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_1.png', format='png', dpi=300)
-        
+        self.fig2.savefig(rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_2.png', format='png', dpi=300)
         self.fig3.savefig(rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_3.png', format='png', dpi=300)
         self.fig4.savefig(rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_4.png', format='png', dpi=300)
     
@@ -1322,23 +1322,23 @@ class CMD():
             zip_ref.extractall(out_dir)
         
         imgrep_path_1 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_1.png'
-        # imgrep_path_2 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_2.png'
+        imgrep_path_2 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_2.png'
         imgrep_path_3 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_3.png'
         imgrep_path_4 = rf'{self.BASE_FOLDER}\Documentos Emitidos\{self.nota}\Figura_4.png'
         
         media_path = os.path.join(out_dir, "word", "media")
         img_file_1 = os.path.join(media_path, "image5.png")
-        # img_file_2 = os.path.join(media_path, "image6.png")
+        img_file_2 = os.path.join(media_path, "image6.png")
         img_file_3 = os.path.join(media_path, "image7.png")
         img_file_4 = os.path.join(media_path, "image8.png")
         
         os.remove(img_file_1)
-        # os.remove(img_file_2)
+        os.remove(img_file_2)
         os.remove(img_file_3)
         os.remove(img_file_4)
         
         shutil.copy(imgrep_path_1, img_file_1)
-        # shutil.copy(imgrep_path_2, img_file_2)
+        shutil.copy(imgrep_path_2, img_file_2)
         shutil.copy(imgrep_path_3, img_file_3)
         shutil.copy(imgrep_path_4, img_file_4)
         
