@@ -55,6 +55,20 @@ class CMD():
         locale.setlocale(locale.LC_ALL, 'pt_BR')
         
         ### De acordo com a GED 4319: Ramal de Ligação - Montagem (https://sites.cpfl.com.br/documentos-tecnicos/GED-4319.pdf)
+        self.dict_ramal = {
+            '1P10(A10)' : '10 mm² - Duplex',
+            '1P16(A16)' : '16 mm² - Duplex',
+            '2P16(A16)' : '16 mm² - Triplex',
+            '2P25(A25)' : '25 mm² - Triplex',
+            '3P10(A10)' : '10 mm² - Quadruplex',
+            '3P16(A16)' : '16 mm² - Quadruplex',
+            '3P25(A25)' : '25 mm² - Quadruplex',
+            '3P35(A35)' : '35 mm² - Quadruplex',
+            '3P50(A50)' : '50 mm² - Quadruplex',
+            '3P70(A70)' : '70 mm² - Quadruplex',
+            '3P120(A120)' : '120 mm² - Quadruplex'
+            }
+        
         self.dict_padrao_ramal_127_220 = {
             'A1' : '1P10(A10)',
             'A2' : '1P16(A16)',
@@ -526,6 +540,7 @@ class CMD():
         choosen_ramal = ramais[int(res)-1]
         print("")
         self.logger.info(f"Foi selecionado o Ramal de Ligação {choosen_ramal}...")
+        self.ramal_selecionado = choosen_ramal
         
         fases_existente = int(self.dss.Line[self.ramal_ligacao].LineCode.Name.upper()[0])
         fases_norma = 3
@@ -1062,6 +1077,10 @@ class CMD():
         
         #self.PFC = (self.CTO - self.CRC) - self.ERD
         
+        if self.Categoria_Ligacao != 'N/A':
+            
+            self.ramal_selecionado = self.dict_ramal[self.dict_padrao_ramal[self.Categoria_Ligacao]]
+        
         variables = {
             "DATA_EXT_FULL" : self.today,
             
@@ -1075,6 +1094,8 @@ class CMD():
             "DEM_SOLICIT" : locale.format_string('%.2f', self.DTS),
             "DEM_AUMENTO" : locale.format_string('%.2f', self.DTS-self.DE),
             "CAT_LIGACAO" : self.Categoria_Ligacao,
+            "TIPO_RAMAL" : self.ramal_aereo_subterraneo,
+            "RAMAL_LIGACAO" : self.ramal_selecionado,
             
             "MDD" : locale.format_string('%.2f', self.MDD),
             "QTOBS" : locale.format_string('%.2f', 100*(1-self.volts.min().min())),
